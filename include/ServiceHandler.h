@@ -1,0 +1,188 @@
+/************************************************************************
+*                                                                       *
+* The information described in this file is a confidential and          *
+* proprietary product of 6d Technologies.                               *
+* (c) 2020 6d Technologies                                              *
+* All Rights Reserved                                                   *
+*                                                                       *
+*************************************************************************
+*
+* ServiceHandler.h
+*
+*
+* Rev Date      User      Comments
+* --- --------- --------  -----------------------------------------------
+*
+*/
+
+
+#if !(defined __6dServiceHandler_H)
+#define __6dServiceHandler_H
+
+/**
+ * Header Includes
+ */
+#include "AppConfigParams.h"
+#include "UDPEventMonitor.h"
+#include "ServiceResource.h"
+
+/************************************************************************
+ * Class : ServiceHandler
+ * Purpose : to handler Service related opertions 
+ ************************************************************************/
+
+class CServiceHandler : public IEventListener
+{
+	private:
+		/**
+		 * Private Variables
+		 */
+		char  	pmesc_ServiceName[20];
+		string 	meC_ServiceType;
+
+		int 	mesi_ServiceId;
+		int 	mesi_LicenseCap;
+		int 	mesi_AllotedCap; //Not Used
+
+		char 	mesc_Status;
+
+		long 	mesl_SynKey;
+
+		float 	mef_LicenseCapPercentage;
+
+		std::map<string,CServiceResource*>meC_ResourceMap;
+		std::map<string,CServiceResource*>::iterator meC_CurrentResource;
+		std::mutex meC_ResourceMutex;
+
+
+	protected:
+		/**
+		 * Protected Variables
+		 */
+
+	public:
+		/**
+		 * Public Variables
+		 */
+
+	private:
+		/**
+		 * Private Member Functions
+		 */
+
+		//method to initialise the class object
+		void    mefn_initialize();
+
+		//Process
+		void 	mefn_processAddResource(CServiceResource*);
+		void 	mefn_processLoadResource(CServiceResource*);
+
+		void 	mefn_processRemoveResource(string);
+
+		void 	mefn_processDeactivateService(string);
+		void 	mefn_processActivateService(string);
+
+		void 	mefn_calculateResourceCount(string);
+		void 	mefn_calculateResourceCount(int&, int&, CQueue<CServiceResource*>&);
+
+		void 	mefn_processResetBusyCount(string);
+
+		void 	mefn_updateTotalChannelCount();
+
+
+	protected:
+		/**
+		 * Protected Member Functions
+		 */
+
+	public:
+		/**
+		 * Public Member Functions
+		 */
+		//Constructor
+		CServiceHandler();
+
+
+		//Destructor
+		~CServiceHandler();
+
+		//method to print object
+		void    mcfn_printObject();
+		//call back method for reporting events
+		void    mcfn_onNotifyEvent(CGenericEvent&,long);
+		//method to subscribe for event
+		void    mcfn_subscribeEvent(IAppCallBack *,CEventCriteria *);
+		//method to unsubscribe event
+		void    mcfn_unsubscribeEvent(IAppCallBack *,CEventCriteria *);
+		//method to get sync key
+		//long    mcfn_getSynchronizationKey(CGenericEvent &){return (long)this;}
+
+		long 	mcfn_getSynchronizationKey(CGenericEvent &)	{ return mesl_SynKey; }
+
+		void 	mcfn_setSynKey(long slL_Key) 			{ mesl_SynKey=slL_Key; }
+
+		
+		/*
+
+		bool 	mcfn_getNextInstance(CServiceResource* pCL_IntanceResource)
+		{
+			lock_guard<mutex> CL_Lock(meC_ResourceMutex);
+			if(meC_CurrentResource == meC_ResourceMap.end())
+			{
+				meC_CurrentResource = meC_ResourceMap.begin();
+			}
+
+			pCL_IntanceResource = meC_CurrentResource->second;
+			++meC_CurrentResource;
+			return true;
+		}
+		int 	mcfn_getInstanceCount()
+		{
+			lock_guard<mutex> CL_Lock(meC_ResourceMutex);
+			return meC_ResourceMap.size();
+			
+			int siL_ResourceCount = 0x00;
+			for (const auto& lL_Itr : meC_ResourceMap)
+			{
+				if(lL_Itr.second->mcfn_getStatus() == 'A')
+					siL_ResourceCount++;
+			}
+			return siL_ResourceCount;
+		
+		}
+		CServiceResource* mcfn_getInstance(const int& siL_InstanceId)
+		{
+			lock_guard<mutex> CL_Lock(meC_ResourceMutex);
+			auto lL_Itr = meC_ResourceMap.find(siL_InstanceId);
+			if(lL_Itr != meC_ResourceMap.end())
+			{
+				return lL_Itr->second;
+			}
+			return nullptr;
+		}
+
+		*/
+
+		//Getter and Setter Functions
+		void 	mcfn_setServiceName(const char* pscL_ServiceName)	{ strcpy(pmesc_ServiceName,pscL_ServiceName); 	}
+		void 	mcfn_setServiceId(const int& siL_ServiceId) 		{ mesi_ServiceId = siL_ServiceId; 		}
+		void 	mcfn_setServiceType(const string& CL_ServiceType) 	{ meC_ServiceType = CL_ServiceType; 		}
+		void 	mcfn_setLicenseCap(const int& siL_LicenseCap) 		{ mesi_LicenseCap = siL_LicenseCap;		}
+		void 	mcfn_setAllotedCap(const int& siL_AllotedCap) 		{ mesi_AllotedCap = siL_AllotedCap;		}
+		void 	mcfn_setStatus(const char& scL_status) 			{ mesc_Status = scL_status;   			}
+		void 	mcfn_setLicenseCapPercentage(const float& fL_CapPer) 	{ mef_LicenseCapPercentage =  fL_CapPer; 	}
+
+		char* 	mcfn_getServiceName() 				{ return pmesc_ServiceName; 		}
+		int 	mcfn_getServiceId() 				{ return mesi_ServiceId;  		}
+		string 	mcfn_getServiceType() 				{ return meC_ServiceType;		}
+		int 	mcfn_getLicenseCap() 				{ return mesi_LicenseCap; 		}
+		int 	mcfn_getAllotedCap() 				{ return mesi_AllotedCap; 		}
+		char 	mcfn_getStatus() 				{ return mesc_Status;     		}
+		float 	mcfn_getLicenseCapPercentage() 			{ return mef_LicenseCapPercentage;	}
+
+		bool 	mcfn_fetchResource(char* pscL_SignalingIp,long& slL_SignalingPort,int& siL_InstanceId,int& siL_ErrorCode);
+		bool 	mcfn_releaseResource(string CL_SignalingIpPort,int& siL_ErrorCode);
+
+};
+
+#endif
