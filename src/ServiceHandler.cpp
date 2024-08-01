@@ -180,7 +180,6 @@ void CServiceHandler::mcfn_onNotifyEvent(CGenericEvent& CL_GenericEvent,long slL
 		case EVT_UPDATE_TOTALCHANNEL:
 			{
 				mefn_updateTotalChannelCount();
-				//mefn_calculateResourceCount();
 				break;
 			}
 		case EVT_RESET_BUSYCOUNT:
@@ -216,7 +215,7 @@ void CServiceHandler::mcfn_onNotifyEvent(CGenericEvent& CL_GenericEvent,long slL
 	}
 
 	case calculateResource://dispatched from RegisterHandler
-	{
+CL_ServiceKey	{
 		member_lock();
 		recalculate resource for entire service
 	}
@@ -276,7 +275,6 @@ void CServiceHandler::mefn_processAddResource(CServiceResource* pCL_ServiceResou
 
 	meC_ResourceMap.insert({pCL_ServiceResource->mcfn_getSignalingIP()+":"+to_string(pCL_ServiceResource->mcfn_getSignalingPort()),pCL_ServiceResource});
 
-	//TODO move to somewhere
 	pCL_ServiceResource->mcfn_InsertIntoExternalCache();
 
 	CRegisterServiceResourceSet CL_RegisterServiceResourceSet;
@@ -425,193 +423,6 @@ void CServiceHandler::mefn_processDeactivateService(string CL_SignalingIpPort)
 	__return__();
 }
 
-
-/************************************************************************
- * Class     : CServiceHandler
- * Method    : mefn_calculateResourceCount
- * Purpose   : calculate resource count
- * Arguments : CL_SignalingIpPort
- * Returns   : None
- ************************************************************************/
-
-void CServiceHandler::mefn_calculateResourceCount(string CL_SignalingIpPort)
-{
-	__entryFunction__;
-	int siL_SmallestResourceCount   = 0x00;
-	int siL_TotalResourceCount      = 0x00;
-
-	if(meC_ServiceType=="IBD")
-	{
-		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getIBDTotalChannelCount();
-	}
-	else
-	{
-
-		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getIBDTotalChannelCount();
-	}
-
-	/*
-
-	//calculate maxResourceCap for each ServiceInstance
-	siL_TotalResourceCount 		= mesi_LicenseCap;
-
-	CQueue<CServiceResource*>CL_FreeServiceResourceQueue;
-	for(auto lL_ResourceItr : meC_ResourceMap)
-	{
-		if(mesi_LicenseCap != 0x00 && lL_ResourceItr.second->mcfn_getStatus() == 'A' )
-		{
-			lL_ResourceItr.second->mcfn_resetAllotedResourceCap();
-			lL_ResourceItr.second->mcfn_resetFreeResourceCount();
-
-			CL_FreeServiceResourceQueue.mcfn_push(lL_ResourceItr.second);
-			if( siL_SmallestResourceCount > mesi_LicenseCap - lL_ResourceItr.second->mcfn_getAllotedResourceCap() )
-			{
-				siL_SmallestResourceCount = mesi_LicenseCap - lL_ResourceItr.second->mcfn_getAllotedResourceCap();
-			}
-			else
-			{
-				if(siL_SmallestResourceCount == 0x00)
-					siL_SmallestResourceCount = mesi_LicenseCap - lL_ResourceItr.second->mcfn_getAllotedResourceCap();
-			}
-
-		}
-
-	}
-	if(CL_FreeServiceResourceQueue.mcfn_getCount() == 0x00)
-	{
-		while(1)
-		{
-			CServiceMasterSet CL_ServiceMasterSet;
-			if(CL_ServiceMasterSet.mcfn_updateTotalAllocatedResource(mesi_ServiceId,0))
-				break;
-			usleep(DBFAILURESLEEPDUR);
-		}
-		__return__();
-	}
-	if(siL_TotalResourceCount > 0x00 && siL_SmallestResourceCount > 0x00)
-	{
-		mesi_AllotedCap = 0x00;
-		mefn_calculateResourceCount(siL_TotalResourceCount, siL_SmallestResourceCount, CL_FreeServiceResourceQueue);
-	}
-	for(const auto& lL_ResourceItr : meC_ResourceMap)
-	{
-		while(1)
-		{
-			CUpdateServiceResourceSet CL_UpdateServiceResourceSet;
-			if(CL_UpdateServiceResourceSet.mcfn_updateResource(lL_ResourceItr.first,mesi_ServiceId,lL_ResourceItr.second->mcfn_getAllotedResourceCap(),QUERYTYPE_UPDATE_ALLOCATED_RESOURCE))
-				break;
-			usleep(DBFAILURESLEEPDUR);
-		}
-		EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "calculateResourceCount", "Success", this,"", "New Calculated AlloatedResourceCount :%d, SignalingIpPort:%s, AllocatedCount:%d, LicenseCount:%d",lL_ResourceItr.second->mcfn_getAllotedResourceCap(),lL_ResourceItr.first.c_str(),lL_ResourceItr.second->mcfn_getAllotedResourceCap(),mesi_LicenseCap);
-
-	}
-	*/
-	while(1)
-	{
-		CServiceMasterSet CL_ServiceMasterSet;
-		if(CL_ServiceMasterSet.mcfn_updateTotalAllocatedResource(mesi_ServiceId,mesi_LicenseCap))
-			break;
-		usleep(DBFAILURESLEEPDUR);
-	}
-
-	__return__();
-
-}
-
-/************************************************************************
- * Class     : CServiceHandler
- * Method    : mefn_calculateResourceCount
- * Purpose   : calculate resource count
- * Arguments : siL_LicenseCap,siL_SmallestResourceCount, CQueue<CServiceResource*>&
- * Returns   : None
- ************************************************************************/
-
-void CServiceHandler::mefn_calculateResourceCount(int& siL_LicenseCap, int& siL_SmallestResourceCount, CQueue<CServiceResource*>& CL_FreeServiceResourceQueue)
-{
-	__entryFunction__;
-
-	/*
-	int siL_ResourcePerInstance      = 0x00;
-	int siL_OddNumberCount           = 0x00;
-	int siL_NewSmallestResourceCount = 0x00;
-
-	siL_ResourcePerInstance = siL_LicenseCap / CL_FreeServiceResourceQueue.mcfn_getCount();
-	siL_OddNumberCount      = siL_LicenseCap % CL_FreeServiceResourceQueue.mcfn_getCount();
-	if(siL_ResourcePerInstance <= siL_SmallestResourceCount)
-	{
-		int siL_FreeServiceResourceQueueSize = CL_FreeServiceResourceQueue.mcfn_getCount();
-
-		CServiceResource* pCL_Resource = nullptr;
-		while(siL_FreeServiceResourceQueueSize-- && CL_FreeServiceResourceQueue.mcfn_pop(pCL_Resource, false))
-		{
-			pCL_Resource->mcfn_addToAllotedResourceCap(siL_ResourcePerInstance);
-			pCL_Resource->mcfn_addToFreeResourceCount(siL_ResourcePerInstance);
-			mesi_AllotedCap  	 		+= siL_ResourcePerInstance;
-			siL_LicenseCap                         	-= siL_ResourcePerInstance;
-
-			if(pCL_Resource->mcfn_getAllotedResourceCap() < pCL_Resource->mcfn_getMaxResourceCap() )
-			{
-				CL_FreeServiceResourceQueue.mcfn_push(pCL_Resource);
-			}
-		}
-		if(siL_OddNumberCount > 0x00 && siL_LicenseCap && CL_FreeServiceResourceQueue.mcfn_getCount())
-		{
-			CServiceResource* pCL_Resource = nullptr;
-			while(siL_OddNumberCount-- && CL_FreeServiceResourceQueue.mcfn_pop(pCL_Resource, false))
-			{
-				pCL_Resource->mcfn_incrementAllotedResourceCap();
-				pCL_Resource->mcfn_incrementFreeResourceCount();  
-				mesi_AllotedCap 	  		+= 1;
-				siL_LicenseCap                          -= 1;
-
-
-				if(pCL_Resource->mcfn_getAllotedResourceCap() < pCL_Resource->mcfn_getMaxResourceCap() )
-				{
-					CL_FreeServiceResourceQueue.mcfn_push(pCL_Resource);
-				}
-			}
-		}
-
-		__return__();
-
-	}
-	else
-	{
-		int siL_FreeServiceResourceQueueSize = CL_FreeServiceResourceQueue.mcfn_getCount();
-		CServiceResource* pCL_Resource = nullptr;
-		while(siL_FreeServiceResourceQueueSize-- && CL_FreeServiceResourceQueue.mcfn_pop(pCL_Resource, false))
-		{
-			pCL_Resource->mcfn_addToAllotedResourceCap(siL_SmallestResourceCount);
-			pCL_Resource->mcfn_addToFreeResourceCount(siL_SmallestResourceCount);
-			mesi_AllotedCap   			+= siL_SmallestResourceCount;
-			siL_LicenseCap                          -= siL_SmallestResourceCount;
-
-
-			if(pCL_Resource->mcfn_getAllotedResourceCap() < pCL_Resource->mcfn_getMaxResourceCap() )
-			{
-				CL_FreeServiceResourceQueue.mcfn_push(pCL_Resource);
-				if(siL_NewSmallestResourceCount > pCL_Resource->mcfn_getMaxResourceCap() - pCL_Resource->mcfn_getAllotedResourceCap())
-				{
-					siL_NewSmallestResourceCount = pCL_Resource->mcfn_getMaxResourceCap() - pCL_Resource->mcfn_getAllotedResourceCap();
-				}
-				else
-				{
-					if(siL_NewSmallestResourceCount == 0x00)
-					{
-						siL_NewSmallestResourceCount = pCL_Resource->mcfn_getMaxResourceCap() - pCL_Resource->mcfn_getAllotedResourceCap();
-					}
-				}
-			}
-		}
-		if(siL_NewSmallestResourceCount > 0x00 && siL_LicenseCap > 0x00 && CL_FreeServiceResourceQueue.mcfn_getCount() > 0x00)
-		{
-			mefn_calculateResourceCount(siL_LicenseCap, siL_NewSmallestResourceCount, CL_FreeServiceResourceQueue);
-		}
-	}
-	*/
-	__return__();
-
-}
 bool CServiceHandler::mcfn_fetchResource(char* pscL_SignalingIp,long& slL_SignalingPort,int& siL_InstanceId,int& siL_ErrorCode)
 {
 	__entryFunction__;
@@ -624,12 +435,14 @@ bool CServiceHandler::mcfn_fetchResource(char* pscL_SignalingIp,long& slL_Signal
 	}
 
 
+	/*
 	if(!CResourceCache::mcfn_getInstance()->mcfn_incrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),mesi_LicenseCap))
 	{
 		siL_ErrorCode = ER_RESOURCE_BUSY;
 		__return__(false);	
 	}
 
+	*/
 	int siL_ResourceCount = meC_ResourceMap.size();
 
 	bool bL_IsInstanceAvailable = false;
@@ -677,7 +490,7 @@ bool CServiceHandler::mcfn_releaseResource(string CL_SignalingIpPort,int& siL_Er
 		siL_ErrorCode = ER_RELEASE_FALIURE;
 		return false;
 	}
-	CResourceCache::mcfn_getInstance()->mcfn_decrementBusyCount(CL_SignalingIpPort);
+	//CResourceCache::mcfn_getInstance()->mcfn_decrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),CL_SignalingIpPort);
 	return true;
 }
 

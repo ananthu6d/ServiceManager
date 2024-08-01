@@ -93,15 +93,15 @@ class CResourceCache
 			return pmeC_ResourceCache;
 		}
 
-		bool	mcfn_insertBusyCount(const string& CL_MapKey,const int& siL_BusyCount = 0);
-		bool	mcfn_fetchBusyCount(const string& CL_MapKey,int&);
+		bool	mcfn_insertBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,const int& siL_BusyCount = 0);
+		bool	mcfn_fetchBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,int&);
 
-		bool	mcfn_incrementBusyCount(const string& CL_MapKey,const int& siL_MaxLimit,const int& siL_BusyCount = 1);
-		bool	mcfn_decrementBusyCount(const string& CL_MapKey,const int& siL_BusyCount = 1);	
+		bool	mcfn_incrementBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,const int& siL_MaxLimit,const int& siL_BusyCount = 1);
+		bool	mcfn_decrementBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,const int& siL_BusyCount = 1);	
 
-		bool	mcfn_resetBusyCount(const string& CL_MapKey);
+		bool	mcfn_resetBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey);
 
-		bool	mcfn_removeFromResourceCache(const string& CL_MapKey);
+		bool	mcfn_removeFromResourceCache(const string& CL_ServiceKey,const string& CL_InstanceKey);
 }; // end of class ResourceCache
 
 #endif // end of _6dResourceCache_H

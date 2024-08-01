@@ -1,7 +1,7 @@
 #Application Version
 APPVERSION="0.0.10"
 #Application Release Date
-APPRELDATE="16 July 2024"
+APPRELDATE="31 July 2024"
 CC= g++ -std=c++11 -w
 
 #AppName

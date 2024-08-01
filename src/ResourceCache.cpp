@@ -22,7 +22,6 @@
 */
 
 #include "AppExterns.h"
-//#include "ResourceCacheDefines.h"
 #include "ResourceCache.h"
 #include "AppHeaders.h"
 
@@ -74,109 +73,108 @@ CResourceCache::~CResourceCache()
 	
 }
 
-bool CResourceCache::mcfn_insertBusyCount(const string& CL_MapKey,const int& siL_BusyCount)
+bool CResourceCache::mcfn_insertBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,const int& siL_BusyCount)
 {
 	lock_guard<mutex> CL_Lock(meC_ResourceCacheLock);
 
 	int siL_ErrorCode = 0x00;
-	if(pmeI_RedisCacheInterface->mcfn_setKeyValue("",CL_MapKey,to_string(siL_BusyCount),CG_AppConfigParams.mcfn_getSessionExpiryTime(),siL_ErrorCode))
+	if(pmeI_RedisCacheInterface->mcfn_setHashFieldValue("",CL_ServiceKey,CL_InstanceKey,to_string(siL_BusyCount),siL_ErrorCode))
 	{
-		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Insert", this,"","MapKey:%s, BusyCount:%d",CL_MapKey.c_str(),siL_BusyCount);
+		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Insert", this,"","ServiceKey:%s,InstanceKey:%s, BusyCount:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_BusyCount);
                 return true;		
 	}
-	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Insertion MapKey:%s, BusyCount:%d",CL_MapKey.c_str(),siL_BusyCount);
+	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Insertion ServiceKey:%s, InstanceKey:%s, BusyCount:%d,RedisErrorCode:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_BusyCount,siL_ErrorCode);
 	return false;
 }
-
-bool CResourceCache::mcfn_fetchBusyCount(const string& CL_MapKey,int& siL_BusyCount)
+bool CResourceCache::mcfn_fetchBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,int& siL_BusyCount)
 {
 	lock_guard<mutex> CL_Lock(meC_ResourceCacheLock);
 
 	string CL_Value = "";
-	if(pmeI_RedisCacheInterface->mcfn_getValue("",CL_MapKey,CL_Value) == 0)
+	if(pmeI_RedisCacheInterface->mcfn_getHashFieldValue("",CL_ServiceKey,CL_InstanceKey,CL_Value) == 0)
 	{
 		siL_BusyCount = atoi(CL_Value.c_str());	
-		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Insert", this,"","MapKey:%s, BusyCount:%d",CL_MapKey.c_str(),siL_BusyCount);
+		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Insert", this,"","ServiceKey:%s,InstanceKey:%s, BusyCount:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_BusyCount);
 		return true;
 	}
-	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Insertion MapKey:%s, BusyCount:%d",CL_MapKey.c_str(),siL_BusyCount);
+	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Insertion ServiceKey:%s,InstanceKey:%s, BusyCount:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_BusyCount);
 	return false;	
 }
-bool CResourceCache::mcfn_incrementBusyCount(const string& CL_MapKey,const int& siL_MaxLimit,const int& siL_BusyCount)
+bool CResourceCache::mcfn_incrementBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,const int& siL_MaxLimit,const int& siL_BusyCount)
 {
 	lock_guard<mutex> CL_Lock(meC_ResourceCacheLock);
 	
 	string CL_Value = "";
-	if(pmeI_RedisCacheInterface->mcfn_getValue("",CL_MapKey,CL_Value) != 0)
+	if(pmeI_RedisCacheInterface->mcfn_getHashFieldValue("",CL_ServiceKey,CL_InstanceKey,CL_Value) != 0)
 	{
 		return false;
 	}
+	int siL_ErrorCode = 0x00;
 	if(atoi(CL_Value.c_str()) < siL_MaxLimit)
 	{
 		long slL_NewValue = 0x00;
-		int siL_ErrorCode = 0x00;
-		if(pmeI_RedisCacheInterface->mcfn_incrementExistingIntValue("",CL_MapKey,siL_BusyCount,slL_NewValue,siL_ErrorCode))
+		if(pmeI_RedisCacheInterface->mcfn_incrementExistingHashFieldIntValue("",CL_ServiceKey,CL_InstanceKey,siL_BusyCount,slL_NewValue,siL_ErrorCode))
 		{
-			EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Increment", this,"","MapKey:%s, NewCount:%ld,MaxLimit:%d",CL_MapKey.c_str(),slL_NewValue,siL_MaxLimit);
+			EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Increment", this,"","ServiceKey:%s, InstanceKey:%s, NewCount:%ld,MaxLimit:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),slL_NewValue,siL_MaxLimit);
 			return true;
 		}
 	}
-	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Increment MapKey:%s",CL_MapKey.c_str());
+	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Increment ServiceKey:%s, InstanceKey:%s, RedisErrorCode:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_ErrorCode);
 	return false;
 }
 
-bool CResourceCache::mcfn_decrementBusyCount(const string& CL_MapKey,const int& siL_BusyCount)
+bool CResourceCache::mcfn_decrementBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey,const int& siL_BusyCount)
 {
 	lock_guard<mutex> CL_Lock(meC_ResourceCacheLock);
 
 	string CL_Value = "";
-        if(pmeI_RedisCacheInterface->mcfn_getValue("",CL_MapKey,CL_Value) != 0)
+        if(pmeI_RedisCacheInterface->mcfn_getHashFieldValue("",CL_ServiceKey,CL_InstanceKey,CL_Value) != 0)
         {
                 return false;
         }
 
+	int siL_ErrorCode = 0x00;
 	if(atoi(CL_Value.c_str()) > 0x00)
-        {
+	{
                 long slL_NewValue = 0x00;
-                int siL_ErrorCode = 0x00;
-                if(pmeI_RedisCacheInterface->mcfn_incrementExistingIntValue("",CL_MapKey,(0-siL_BusyCount),slL_NewValue,siL_ErrorCode))
+                if(pmeI_RedisCacheInterface->mcfn_incrementExistingHashFieldIntValue("",CL_ServiceKey,CL_InstanceKey,(0-siL_BusyCount),slL_NewValue,siL_ErrorCode))
                 {
-                        EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Decrement", this,"","MapKey:%s, NewCount:%ld",CL_MapKey.c_str(),slL_NewValue);
+                        EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Decrement", this,"","ServiceKey:%s, InstanceKey:%s, NewCount:%ld",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),slL_NewValue);
                         return true;
                 }
         }
-	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Decrement MapKey:%s",CL_MapKey.c_str());
+	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Decrement ServiceKey:%s, InstanceKey:%s, RedisErrorCode:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_ErrorCode);
 	return false;
 }
 
 
-bool CResourceCache::mcfn_resetBusyCount(const string& CL_MapKey)
+bool CResourceCache::mcfn_resetBusyCount(const string& CL_ServiceKey,const string& CL_InstanceKey)
 {
 	lock_guard<mutex> CL_Lock(meC_ResourceCacheLock);
 
 	int siL_ErrorCode = 0x00;
 	string CL_Value	  = "0";
-	if(pmeI_RedisCacheInterface->mcfn_updateExistingKeyValue("",CL_MapKey,CL_Value,CG_AppConfigParams.mcfn_getSessionExpiryTime(),siL_ErrorCode) == 0)
+	if(pmeI_RedisCacheInterface->mcfn_updateExistingHashFieldValue("",CL_ServiceKey,CL_InstanceKey,CL_Value,siL_ErrorCode) == 0)
 	{
-		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Reset", this,"","MapKey:%s",CL_MapKey.c_str());
+		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Reset", this,"","ServiceKey:%s,InstanceKey:%s",CL_ServiceKey.c_str(),CL_InstanceKey.c_str());
 		return true;
 	}
 
-	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Reset MapKey:%s",CL_MapKey.c_str());
+	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Reset ServiceKey:%s,InstanceKey:%s, RedisErrorCode:%d",CL_ServiceKey.c_str(),CL_InstanceKey.c_str(),siL_ErrorCode);
 	return false;
 }
 
-bool CResourceCache::mcfn_removeFromResourceCache(const string& CL_MapKey)
+bool CResourceCache::mcfn_removeFromResourceCache(const string& CL_ServiceKey,const string& CL_InstanceKey)
 {
 	lock_guard<mutex> CL_Lock(meC_ResourceCacheLock);
 
 	int siL_ErrorCode = 0x00;
-	if(pmeI_RedisCacheInterface->mcfn_deleteKeyValue("",CL_MapKey,siL_ErrorCode))
+	if(pmeI_RedisCacheInterface->mcfn_deleteHashFieldValue("",CL_ServiceKey,CL_InstanceKey,siL_ErrorCode))
 	{
-		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Remove", this,"","MapKey:%s",CL_MapKey.c_str());
+		EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID, "ResourceCache","Remove", this,"","ServiceKey:%s,InstanceKey:%s",CL_ServiceKey.c_str(),CL_InstanceKey.c_str());
 		return true;
 	}	
-	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Remove MapKey:%s, ",CL_MapKey.c_str());
+	EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "ResourceCache","Failure", this,"","Remove ServiceKey:%s,InstanceKey:%s ",CL_ServiceKey.c_str(),CL_InstanceKey.c_str());
 	return false;
 }
 

@@ -365,6 +365,7 @@ bool CInstanceRegistry::mcfn_loadIntoServiceResource()
 
 			//pCL_ServiceResource->mcfn_setMaxResourceCap(lL_ServiceItr.second->mcfn_getMaxLimit());
 			pCL_ServiceResource->mcfn_setServiceId(atoi(lL_ServiceItr.second->mcfn_getServiceId().c_str()));
+			pCL_ServiceResource->mcfn_setServiceType(lL_ServiceItr.second->mcfn_getServiceType());
 
 			CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_LOAD_RESOURCE,(long)pCL_ServiceResource);
 
@@ -373,7 +374,7 @@ bool CInstanceRegistry::mcfn_loadIntoServiceResource()
 	return true;
 }
 	
-void CInstanceRegistry::mefn_incrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo)
+void CInstanceRegistry::mcfn_incrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo)
 {
 	for(const auto& lL_Itr : pCL_InstanceInfo->mcfn_getServiceMap())
 	{
@@ -386,19 +387,50 @@ void CInstanceRegistry::mefn_incrementTotalChannelCount(const CInstanceInfo* pCL
 			mesi_OBDTotalChannelCount += pCL_InstanceInfo->mcfn_getOutboundResourceCount();
 		}
 	}
+
 }
-void CInstanceRegistry::mefn_decrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo)
+void CInstanceRegistry::mcfn_decrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo)
 {
         for(const auto& lL_Itr : pCL_InstanceInfo->mcfn_getServiceMap())
         {
                 if(lL_Itr.second->mcfn_getServiceType() == "IBD")
-                {
-                        mesi_IBDTotalChannelCount -= pCL_InstanceInfo->mcfn_getInboundResourceCount();
-                }
-                else
-                {
-                        mesi_OBDTotalChannelCount -= pCL_InstanceInfo->mcfn_getOutboundResourceCount();
-                }
-        }
+		{
+			mesi_IBDTotalChannelCount -= pCL_InstanceInfo->mcfn_getInboundResourceCount();
+		}
+		else
+		{
+			mesi_OBDTotalChannelCount -= pCL_InstanceInfo->mcfn_getOutboundResourceCount();
+		}
+	}
 }
+
+bool CInstanceRegistry::mcfn_updateTotalChannelCount()
+{
+	lock_guard<mutex> CL_Lock(meC_RegistryLock);
+	mesi_OBDTotalChannelCount = 0x00;
+	mesi_IBDTotalChannelCount = 0x00;
+	for(const auto& lL_InstanceItr : *pmeC_Registry)
+	{
+		if(lL_InstanceItr.second->mcfn_getStatus() == 'A')
+		{
+			for(const auto& lL_Itr : lL_InstanceItr.second->mcfn_getServiceMap())
+			{
+				if(lL_Itr.second->mcfn_getStatus() == 'A')
+				{
+					if(lL_Itr.second->mcfn_getServiceType() == "IBD")
+					{
+						mesi_IBDTotalChannelCount += lL_InstanceItr.second->mcfn_getInboundResourceCount();
+					}
+					else
+					{
+						mesi_OBDTotalChannelCount += lL_InstanceItr.second->mcfn_getOutboundResourceCount();
+					}
+				}
+			}
+		}	
+	}
+	EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "InstanceRegistry", "updateTotalChannelCount", this,"","IBDTotalChannelCount:%d, OBDTotalChannelCount:%d",mesi_IBDTotalChannelCount,mesi_OBDTotalChannelCount);
+	return true;
+}
+
 

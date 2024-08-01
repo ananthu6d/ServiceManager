@@ -349,18 +349,18 @@ bool CRegistryEventHandler::mefn_processRegisterInstance(const ResourceRegistrat
 
 	if(!CL_ResourceRegistrationReq.ibdservicelist_size() > 0)
 	{
-		EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processRegisterInstance", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "No ServiceList to DeRegister InstanceId :%d,SignalingIp:%s,Port:%s",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport().c_str());
+		EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processRegisterInstance", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "No ServiceList to DeRegister InstanceId :%d,SignalingIp:%s,Port:%d",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport());
 		mesi_StatusCode	= ER_NOSERVICELIST;
 		sprintf(pmesc_StatusDesc,"ServiceList is Empty,Registration Failed!");	
 		__return__(false);
 	}
 
-	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processRegisterInstance", "ReqData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceID:%d,signalingip:%s,signalingport:%s,totalresourcecount:%d,inboundreourcecount:%d,outboundresourcecount:%d,ClientIP:%s,ClientPort:%d",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport().c_str(),CL_ResourceRegistrationReq.totalresourcecount(),CL_ResourceRegistrationReq.inboundresourcecount(),CL_ResourceRegistrationReq.outboundresourcecount(),pmesc_ClientIp,mesl_ClientPort);
+	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processRegisterInstance", "ReqData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceID:%d,signalingip:%s,signalingport:%d,totalresourcecount:%d,inboundreourcecount:%d,outboundresourcecount:%d,ClientIP:%s,ClientPort:%d",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport(),CL_ResourceRegistrationReq.totalresourcecount(),CL_ResourceRegistrationReq.inboundresourcecount(),CL_ResourceRegistrationReq.outboundresourcecount(),pmesc_ClientIp,mesl_ClientPort);
 
 
 	//Checking for wheather the request is for Reg or reReg
 	CInstanceInfo* pCL_InstanceInfo = nullptr;
-	if(CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_ResourceRegistrationReq.signalingip()+":"+CL_ResourceRegistrationReq.signalingport(),&pCL_InstanceInfo))
+	if(CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_ResourceRegistrationReq.signalingip()+":"+to_string(CL_ResourceRegistrationReq.signalingport()),&pCL_InstanceInfo))
 	{
 		__return__(mefn_processReregistrationResource(CL_ResourceRegistrationReq,pCL_InstanceInfo));
 	}
@@ -387,12 +387,12 @@ bool CRegistryEventHandler::mefn_processRegistrationResource(const ResourceRegis
 		__return__(false);
 
 	//inserting to Cache
-	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_insertInstanceInfo(CL_ResourceRegistrationReq.signalingip()+":"+CL_ResourceRegistrationReq.signalingport(),pCL_InstanceInfo))
+	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_insertInstanceInfo(CL_ResourceRegistrationReq.signalingip()+":"+to_string(CL_ResourceRegistrationReq.signalingport()),pCL_InstanceInfo))
 	{
-		EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "CacheInsert", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId :%d,SignalingIp:%s,Port:%s",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport().c_str());
+		EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "CacheInsert", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId :%d,SignalingIp:%s,Port:%d",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport());
 
 		mesi_StatusCode = ER_CACHE_FALIURE;
-		sprintf(pmesc_StatusDesc,"Insertion of Instance With Id:%d, SignalingIp:%s, Port:%s into Cache, Failed!",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport().c_str());
+		sprintf(pmesc_StatusDesc,"Insertion of Instance With Id:%d, SignalingIp:%s, Port:%d into Cache, Failed!",CL_ResourceRegistrationReq.instanceid(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport());
 		
 		if(pCL_InstanceInfo)
 			delete pCL_InstanceInfo;
@@ -401,7 +401,7 @@ bool CRegistryEventHandler::mefn_processRegistrationResource(const ResourceRegis
 		__return__(false);
 	}
 
-	EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "CacheInsert", "Success", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId :%d,SignalingIp:%s,Port:%s",pCL_InstanceInfo->mcfn_getInstanceId(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport().c_str());
+	EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "CacheInsert", "Success", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId :%d,SignalingIp:%s,Port:%d",pCL_InstanceInfo->mcfn_getInstanceId(),CL_ResourceRegistrationReq.signalingip().c_str(),CL_ResourceRegistrationReq.signalingport());
 
 
 	//Insert to Db
@@ -429,8 +429,9 @@ bool CRegistryEventHandler::mefn_processRegistrationResource(const ResourceRegis
 
 		pCL_ServiceResource->mcfn_setTotalChannel(pCL_InstanceInfo->mcfn_getInboundResourceCount());
 
-		pCL_ServiceResource->mcfn_setServiceId(atoi(lL_Itr.first.c_str()));
-		
+		pCL_ServiceResource->mcfn_setServiceId(atoi(lL_Itr.second->mcfn_getServiceId().c_str()));
+		pCL_ServiceResource->mcfn_setServiceType(lL_Itr.second->mcfn_getServiceType());
+
 		CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_ADD_RESOURCE,(long)pCL_ServiceResource);
 
 	}
@@ -456,7 +457,7 @@ bool CRegistryEventHandler::mefn_setInstanceInfo(const ResourceRegistrationReq& 
 	pCL_InstanceInfo->mcfn_setTotalResourceCount(CL_ResourceRegistrationReq.totalresourcecount());
 	pCL_InstanceInfo->mcfn_setInboundResourceCount(CL_ResourceRegistrationReq.inboundresourcecount());
 	pCL_InstanceInfo->mcfn_setOutboundResourceCount(CL_ResourceRegistrationReq.outboundresourcecount());
-	pCL_InstanceInfo->mcfn_setSignalingPort(atoi(CL_ResourceRegistrationReq.signalingport().c_str()));
+	pCL_InstanceInfo->mcfn_setSignalingPort(CL_ResourceRegistrationReq.signalingport());
 	pCL_InstanceInfo->mcfn_setInstanceId(CL_ResourceRegistrationReq.instanceid());
 	pCL_InstanceInfo->mcfn_setRegistrationTime(CL_ResourceRegistrationReq.eventtimestamp().c_str());
 	pCL_InstanceInfo->mcfn_setStatus('A');
@@ -548,7 +549,7 @@ bool CRegistryEventHandler::mefn_processReregistrationResource(const ResourceReg
 	if(pCL_InstanceInfo->mcfn_getStatus() == 'D')
 	{
 		//pCL_InstanceInfo->mcfn_activateInstance();
-		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateInstanceInfo(CL_ResourceRegistrationReq.signalingip()+":"+CL_ResourceRegistrationReq.signalingport());
+		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateInstanceInfo(CL_ResourceRegistrationReq.signalingip()+":"+to_string(CL_ResourceRegistrationReq.signalingport()));
 		//TODO Recal TotalResource
 	}
 
@@ -792,21 +793,21 @@ bool CRegistryEventHandler::mefn_processDeRegisterInstance(const ResourceDeRegis
 {
 
 	__entryFunction__;
-	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processDeRegisterInstance", "ReqData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceID:%d,signalingip:%s,signalingport:%s,ClientIP:%s,ClientPort:%d",CL_ResourceDeRegistrationReq.instanceid(),CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport().c_str(),pmesc_ClientIp,mesl_ClientPort);
+	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processDeRegisterInstance", "ReqData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceID:%d,signalingip:%s,signalingport:%d,ClientIP:%s,ClientPort:%d",CL_ResourceDeRegistrationReq.instanceid(),CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport(),pmesc_ClientIp,mesl_ClientPort);
 	CInstanceInfo* pCL_InstanceInfo = nullptr;
 
-	if(CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_ResourceDeRegistrationReq.signalingip()+":"+CL_ResourceDeRegistrationReq.signalingport(),&pCL_InstanceInfo))
+	if(CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_ResourceDeRegistrationReq.signalingip()+":"+to_string(CL_ResourceDeRegistrationReq.signalingport()),&pCL_InstanceInfo))
 	{
 		pCL_InstanceInfo->pmcC_RequestTimer->mcfn_stopRequestTimer();
 		pCL_InstanceInfo->pmcC_EnquiryTimer->mcfn_stopEnquiryTimer();
 
-		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateInstanceInfo(CL_ResourceDeRegistrationReq.signalingip()+":"+CL_ResourceDeRegistrationReq.signalingport());
+		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateInstanceInfo(CL_ResourceDeRegistrationReq.signalingip()+":"+to_string(CL_ResourceDeRegistrationReq.signalingport()));
 		//pCL_InstanceInfo->mcfn_deactivateInstance();
 		while(1)
 		{
 		
 			CDeRegisterInstanceSet CL_DeRegisterInstanceSet;	
-			if(CL_DeRegisterInstanceSet.mcfn_deRegisterInstance(CL_ResourceDeRegistrationReq.signalingip().c_str(),atol(CL_ResourceDeRegistrationReq.signalingport().c_str())))
+			if(CL_DeRegisterInstanceSet.mcfn_deRegisterInstance(CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport()))
 			{
 				break;
 			}
@@ -847,9 +848,9 @@ bool CRegistryEventHandler::mefn_processDeRegisterServiceResource(const Resource
 
 	__entryFunction__;
 
-	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processDeRegisterServiceResource", "ReqData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceID:%d,signalingip:%s,signalingport:%s,servicelistcount:%d,ClientIP:%s,ClientPort:%d",CL_ResourceDeRegistrationReq.instanceid(),CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport().c_str(),CL_ResourceDeRegistrationReq.servicelist_size(),pmesc_ClientIp,mesl_ClientPort);
+	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processDeRegisterServiceResource", "ReqData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceID:%d,signalingip:%s,signalingport:%d,servicelistcount:%d,ClientIP:%s,ClientPort:%d",CL_ResourceDeRegistrationReq.instanceid(),CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport(),CL_ResourceDeRegistrationReq.servicelist_size(),pmesc_ClientIp,mesl_ClientPort);
 
-	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_isInstanceInfoExist(CL_ResourceDeRegistrationReq.signalingip()+":"+CL_ResourceDeRegistrationReq.signalingport()))
+	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_isInstanceInfoExist(CL_ResourceDeRegistrationReq.signalingip()+":"+to_string(CL_ResourceDeRegistrationReq.signalingport())))
 	{
 		mesi_StatusCode = ER_INSTANCEID_NOTREGISTERED;
 		sprintf(pmesc_StatusDesc,"Instance With Id:%d is Not Registered,Deregistration Failed!",CL_ResourceDeRegistrationReq.instanceid());
@@ -866,15 +867,14 @@ bool CRegistryEventHandler::mefn_processDeRegisterServiceResource(const Resource
 
 	for(const auto& CL_ServiceDetails : CL_ResourceDeRegistrationReq.servicelist())
 	{     
-		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateService(CL_ResourceDeRegistrationReq.signalingip()+":"+CL_ResourceDeRegistrationReq.signalingport(),CL_ServiceDetails.second+"_"+CL_ServiceDetails.first);
+		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateService(CL_ResourceDeRegistrationReq.signalingip()+":"+to_string(CL_ResourceDeRegistrationReq.signalingport()),CL_ServiceDetails.second+"_"+CL_ServiceDetails.first);
 		CServiceHandler* pCL_ServiceHandler=nullptr;
 		if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(CL_ServiceDetails.second+"_"+CL_ServiceDetails.first,&pCL_ServiceHandler))
 		{
 			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",atoi(CL_ServiceDetails.first.c_str()));
 		}
-		CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_REMOVE_RESOURCE,CL_ResourceDeRegistrationReq.signalingip().c_str(),atol(CL_ResourceDeRegistrationReq.signalingport().c_str()));
+		CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_REMOVE_RESOURCE,CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport());
 	}
-
 	__return__(true);
 }
 
@@ -1077,12 +1077,12 @@ void CRegistryEventHandler::mefn_processEnquiryResponse(const EnquireStatusResp&
 {
 	__entryFunction__;
 
-	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processEnquiryResponse", "RespData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId:%d,Signalingip:%s,Signalingport:%s,ClientIp:%s,ClientPort:%ld",CL_EnquireStatusResp.instanceid(),CL_EnquireStatusResp.signalingip().c_str(),CL_EnquireStatusResp.signalingport().c_str(),pmesc_ClientIp,mesl_ClientPort);
+	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processEnquiryResponse", "RespData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId:%d,Signalingip:%s,Signalingport:%d,ClientIp:%s,ClientPort:%ld",CL_EnquireStatusResp.instanceid(),CL_EnquireStatusResp.signalingip().c_str(),CL_EnquireStatusResp.signalingport(),pmesc_ClientIp,mesl_ClientPort);
 	
 	CInstanceInfo* pCL_InstanceInfo;
-	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_EnquireStatusResp.signalingip()+":"+CL_EnquireStatusResp.signalingport(),&pCL_InstanceInfo))
+	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_EnquireStatusResp.signalingip()+":"+to_string(CL_EnquireStatusResp.signalingport()),&pCL_InstanceInfo))
 	{	
-		EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processEnquiryResponse", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No InstanceInfo Found for InstanceId:%d,Signalingip:%s,Signalingport:%s",CL_EnquireStatusResp.instanceid(),CL_EnquireStatusResp.signalingip().c_str(),CL_EnquireStatusResp.signalingport().c_str());
+		EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processEnquiryResponse", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No InstanceInfo Found for InstanceId:%d,Signalingip:%s,Signalingport:%d",CL_EnquireStatusResp.instanceid(),CL_EnquireStatusResp.signalingip().c_str(),CL_EnquireStatusResp.signalingport());
 		__return__();
 	}
 
@@ -1119,7 +1119,7 @@ void CRegistryEventHandler::mefn_serilizeRequest(int siL_InstanceId,string CL_Si
 
 	CL_EnquireStatusReq.set_instanceid(siL_InstanceId);
 	CL_EnquireStatusReq.set_signalingip(CL_SignalingIp);
-	CL_EnquireStatusReq.set_signalingport(to_string(siL_SignalingPort));
+	CL_EnquireStatusReq.set_signalingport(siL_SignalingPort);
 
 
 	meS_ServiceManagerEventResp.mcS_EventHeader.mcsi_ProtoBuffLength = CL_EnquireStatusReq.ByteSizeLong();
@@ -1152,7 +1152,7 @@ bool CRegistryEventHandler::mefn_processSocketReconnect(const SocketReconnectReq
 	EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "processSocketReconnect", "Success", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId:%d, ClientIp:%s, ClientPort:%ld",CL_SocketReconnectReq.instanceid(),pmesc_ClientIp,mesl_ClientPort);
 
 	CInstanceInfo* pCL_InstanceInfo = nullptr;
-	if(CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_SocketReconnectReq.signalingip()+":"+CL_SocketReconnectReq.signalingport(),&pCL_InstanceInfo))
+	if(CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_SocketReconnectReq.signalingip()+":"+to_string(CL_SocketReconnectReq.signalingport()),&pCL_InstanceInfo))
 	{
 
 		if(strcmp(pmesc_ClientIp,pCL_InstanceInfo->mcfn_getClientIP())!=0)

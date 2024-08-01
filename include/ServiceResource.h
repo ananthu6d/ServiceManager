@@ -41,6 +41,7 @@ class CServiceResource
 		 */
 
 		string 	meC_SignalingIP;
+		string  meC_ServiceType;
 		
 		long	mesl_SignalingPort;
 
@@ -48,7 +49,11 @@ class CServiceResource
 
 		int	mesi_ServiceId;
 		int 	mesi_InstanceId;
-		int 	mesi_TotalChannel;
+		int 	mesi_TotalChannel; //Remove
+
+		//
+		//BusyCount
+		//
 
 		//std::mutex meC_ServiceResourceMutex;
 	public:
@@ -66,6 +71,7 @@ class CServiceResource
 		CServiceResource()
 		{
 			meC_SignalingIP		= "";
+			meC_ServiceType		= "";
 			mesi_InstanceId 	= 0x00;
 			mesl_SignalingPort 	= 0x00;
 			mesc_Status 		= 'A';
@@ -91,7 +97,7 @@ class CServiceResource
 
 		bool 	mcfn_InsertIntoExternalCache()
 		{
-			return CResourceCache::mcfn_getInstance()->mcfn_insertBusyCount(meC_SignalingIP+":"+to_string(mesl_SignalingPort));
+			return CResourceCache::mcfn_getInstance()->mcfn_insertBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 		}
 
 		void  	mcfn_deActivateResource()
@@ -105,7 +111,7 @@ class CServiceResource
 			if(mesc_Status == 'D')
 			{
 				mesc_Status = 'A';
-				return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_SignalingIP+":"+to_string(mesl_SignalingPort));
+				return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 			}
 			return true;
 
@@ -117,15 +123,16 @@ class CServiceResource
 			{
 				mesc_Status = 'A';
 			}
-			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_SignalingIP+":"+to_string(mesl_SignalingPort));	
+			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));	
 		}
 
 		bool 	mcfn_resetBusyCountInExternalCache()
 		{
-			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_SignalingIP+":"+to_string(mesl_SignalingPort));
+			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 		}
 
 		void 	mcfn_setSignalingIP(char* pscL_IP)      	{ meC_SignalingIP=pscL_IP;	 	}
+		void 	mcfn_setServiceType(const string& CL_Type)     	{ meC_ServiceType=CL_Type;	 	}
 		void 	mcfn_setSignalingPort(const long& slL_Port)   	{ mesl_SignalingPort = slL_Port;       	}
 		void	mcfn_setInstanceId(const int& siL_Id)          	{ mesi_InstanceId = siL_Id;           	}
 		void 	mcfn_setStatus(const char scL_Status)       	{ mesc_Status=scL_Status;		}
@@ -133,6 +140,7 @@ class CServiceResource
 		void 	mcfn_setTotalChannel(const int& siL_Count)      { mesi_TotalChannel = siL_Count;        }
 
 		string 	mcfn_getSignalingIP()                        	{ return meC_SignalingIP;             	}
+		string 	mcfn_getServiceType()                        	{ return meC_ServiceType;             	}
 		long 	mcfn_getSignalingPort()                        	{ return mesl_SignalingPort;           	}
 		int 	mcfn_getInstanceId()                          	{ return mesi_InstanceId;              	}
 		char 	mcfn_getStatus()                            	{ return mesc_Status;                  	}

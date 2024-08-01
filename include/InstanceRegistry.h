@@ -74,8 +74,6 @@ class CInstanceRegistry
 
 		CInstanceRegistry();
 
-		void mefn_incrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo);
-		void mefn_decrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo);
         protected:
                 /**
                  * Protected Functions 
@@ -129,6 +127,11 @@ class CInstanceRegistry
 
 		int 	mcfn_getOBDTotalChannelCount() { return mesi_OBDTotalChannelCount;	}
 		int 	mcfn_getIBDTotalChannelCount() { return mesi_IBDTotalChannelCount;	}
+
+		void mcfn_incrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo);
+                void mcfn_decrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo);
+
+		bool mcfn_updateTotalChannelCount();
 
 		bool 	mcfn_loadIntoServiceResource();
 

@@ -42,7 +42,8 @@
  ************************************************************************/
 bool CServiceResource:: mcfn_getNextResource(char* pscL_Ip,long& slL_Port, int& siL_InstanceId)
 {
-	if(!CResourceCache::mcfn_getInstance()->mcfn_incrementBusyCount(meC_SignalingIP+":"+to_string(mesl_SignalingPort),mesi_TotalChannel))
+	
+	if(!CResourceCache::mcfn_getInstance()->mcfn_incrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort),mesi_TotalChannel))
 	{
 		return false;
 	}
@@ -57,7 +58,7 @@ bool CServiceResource:: mcfn_getNextResource(char* pscL_Ip,long& slL_Port, int& 
 bool CServiceResource::mcfn_releaseResource()
 {
 
-	return CResourceCache::mcfn_getInstance()->mcfn_decrementBusyCount(meC_SignalingIP+":"+to_string(mesl_SignalingPort));
+	return CResourceCache::mcfn_getInstance()->mcfn_decrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 
 	/*
 	int siL_CurrentBusyResourceCount = 0x00;

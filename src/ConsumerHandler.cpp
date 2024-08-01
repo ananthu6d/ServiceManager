@@ -250,7 +250,7 @@ void    CConsumerHandler::mcfn_processReleaseResource(const ReleaseResourceReq& 
 	}
 
 	int siL_ErrorCode       = 0;
-	if(pCL_ServiceHandler->mcfn_releaseResource(CL_ReleaseResourceReq.signalingip()+":"+CL_ReleaseResourceReq.signalingport(),siL_ErrorCode))
+	if(pCL_ServiceHandler->mcfn_releaseResource(CL_ReleaseResourceReq.signalingip()+":"+to_string(CL_ReleaseResourceReq.signalingport()),siL_ErrorCode))
 	{
 		mefn_serilizeResponseAndSend(CL_ReleaseResourceReq.instanceid(),pscL_Tid,SUCCESS,"Resource Released",pscL_ClientIp,slL_ClientPort);
 		__return__();
@@ -283,7 +283,7 @@ bool CConsumerHandler::mefn_serilizeResponseAndSend(const int& siL_InstanceId,ch
 	CL_FetchInstanceResp.set_statuscode(siL_StatusCode);
 	CL_FetchInstanceResp.set_statusdescription(pscL_StatusDesc);
 	CL_FetchInstanceResp.set_signalingip(pscL_SignalingIp);
-	CL_FetchInstanceResp.set_signalingport(to_string(slL_SignalingPort));
+	CL_FetchInstanceResp.set_signalingport(slL_SignalingPort);
 
 	SServiceManagerEvent SL_ServiceManagerEvent;
 

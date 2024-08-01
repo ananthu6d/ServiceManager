@@ -143,12 +143,14 @@ bool CLoadServiceMasterSet:: mcfn_loadServiceMaster()
 			pCL_CServiceHandler->mcfn_setAllotedCap(mesi_AllotedCap);
 			pCL_CServiceHandler->mcfn_setLicenseCapPercentage(mesi_LicenseCap/100.0);
 
+			/*
 			if(!CResourceCache::mcfn_getInstance()->mcfn_insertBusyCount(pCL_CServiceHandler->mcfn_getServiceType()+"_"+to_string(mesi_ServiceId)))
 			{
 				mefn_initDataSet();
 				continue;
 			}
 
+			*/
 			if(!CServiceMaster::mcfn_getInstance()->mcfn_insertServiceHandler(pCL_CServiceHandler->mcfn_getServiceType()+"_"+to_string(mesi_ServiceId),pCL_CServiceHandler))
 			{
 				EVT_LOG(CG_EventLog, LOG_ERROR,siG_InstanceID, "loadServiceMaster","CacheFailure", this,"", "Inserting ServiceId:%d,Type:%s Connection:%p",mesi_ServiceId,pmesc_ServiceType, pmeC_Connection);

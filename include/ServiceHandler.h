@@ -42,9 +42,9 @@ class CServiceHandler : public IEventListener
 
 		int 	mesi_ServiceId;
 		int 	mesi_LicenseCap;
-		int 	mesi_AllotedCap; //Not Used
 
 		char 	mesc_Status;
+		int 	mesi_AllotedCap; //NotUsed
 
 		long 	mesl_SynKey;
 
@@ -81,10 +81,7 @@ class CServiceHandler : public IEventListener
 
 		void 	mefn_processDeactivateService(string);
 		void 	mefn_processActivateService(string);
-
-		void 	mefn_calculateResourceCount(string);
-		void 	mefn_calculateResourceCount(int&, int&, CQueue<CServiceResource*>&);
-
+		
 		void 	mefn_processResetBusyCount(string);
 
 		void 	mefn_updateTotalChannelCount();
@@ -114,55 +111,12 @@ class CServiceHandler : public IEventListener
 		void    mcfn_subscribeEvent(IAppCallBack *,CEventCriteria *);
 		//method to unsubscribe event
 		void    mcfn_unsubscribeEvent(IAppCallBack *,CEventCriteria *);
-		//method to get sync key
-		//long    mcfn_getSynchronizationKey(CGenericEvent &){return (long)this;}
 
 		long 	mcfn_getSynchronizationKey(CGenericEvent &)	{ return mesl_SynKey; }
 
 		void 	mcfn_setSynKey(long slL_Key) 			{ mesl_SynKey=slL_Key; }
 
 		
-		/*
-
-		bool 	mcfn_getNextInstance(CServiceResource* pCL_IntanceResource)
-		{
-			lock_guard<mutex> CL_Lock(meC_ResourceMutex);
-			if(meC_CurrentResource == meC_ResourceMap.end())
-			{
-				meC_CurrentResource = meC_ResourceMap.begin();
-			}
-
-			pCL_IntanceResource = meC_CurrentResource->second;
-			++meC_CurrentResource;
-			return true;
-		}
-		int 	mcfn_getInstanceCount()
-		{
-			lock_guard<mutex> CL_Lock(meC_ResourceMutex);
-			return meC_ResourceMap.size();
-			
-			int siL_ResourceCount = 0x00;
-			for (const auto& lL_Itr : meC_ResourceMap)
-			{
-				if(lL_Itr.second->mcfn_getStatus() == 'A')
-					siL_ResourceCount++;
-			}
-			return siL_ResourceCount;
-		
-		}
-		CServiceResource* mcfn_getInstance(const int& siL_InstanceId)
-		{
-			lock_guard<mutex> CL_Lock(meC_ResourceMutex);
-			auto lL_Itr = meC_ResourceMap.find(siL_InstanceId);
-			if(lL_Itr != meC_ResourceMap.end())
-			{
-				return lL_Itr->second;
-			}
-			return nullptr;
-		}
-
-		*/
-
 		//Getter and Setter Functions
 		void 	mcfn_setServiceName(const char* pscL_ServiceName)	{ strcpy(pmesc_ServiceName,pscL_ServiceName); 	}
 		void 	mcfn_setServiceId(const int& siL_ServiceId) 		{ mesi_ServiceId = siL_ServiceId; 		}
