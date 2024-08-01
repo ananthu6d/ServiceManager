@@ -47,7 +47,7 @@ class CInstanceInfo
 		char 	pmesc_ClientIP[64];
 		
 		char    mesc_Status;
-		
+
 		int 	mesi_TotalResourceCount;
 		int 	mesi_InboundResourceCount;
 		int 	mesi_OutboundResourceCount;
@@ -57,7 +57,12 @@ class CInstanceInfo
 
 		long 	mesl_ClientPort;
 
+		int	mesi_IBDBusyCount; 
+		int	mesi_OBDBusyCount; 
+
 		map	<string,CInstanceServiceInfo*> meC_ServiceInfoMap;
+
+		std::mutex meC_InstanceLock;
 	public:
 		/**
 		 * Public Membesrs
@@ -124,8 +129,18 @@ class CInstanceInfo
 
 		bool 	mcfn_updateService(const string&,const int&);
 
+		//TotalChannlBusyCount
+		int     mcfn_getIBDBusyCount()          { return mesi_IBDBusyCount;     }
+		int     mcfn_getOBDBusyCount()          { return mesi_OBDBusyCount;     }
+		void    mcfn_setIBDBusyCount(const int& siL_Count)	{ mesi_IBDBusyCount = siL_Count;	}
+		void    mcfn_setOBDBusyCount(const int& siL_Count)	{ mesi_OBDBusyCount = siL_Count;	}
 
+		bool 	mcfn_checkAndIncrementIBDBusyCount();
+		bool 	mcfn_checkAndDecrementIBDBusyCount();
+		bool    mcfn_checkAndIncrementOBDBusyCount();
+                bool    mcfn_checkAndDecrementOBDBusyCount();
 
+		bool 	mcfn_findAndCheckForActiveService(const string&);
 
 };
 

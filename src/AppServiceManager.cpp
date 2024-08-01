@@ -160,6 +160,13 @@ bool CAppServiceManager::mcfn_initInstance()
 		return false;
 	}
 
+	if(!CServiceMaster::mcfn_getInstance()->mcfn_loadTotalBusyCount())
+	{
+		cout<<"\nFailed To Load Datas From External Cache!\n";
+                return false;
+	}
+
+
 	//2. load instance master from db - InstanceRegistry
 	//3. load service mapping from db - store each mapping into CServiceHandler::CServiceResource
 	//4. check external cache for each CServiceResource in all CServiceHandler & insert if required

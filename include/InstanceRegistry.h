@@ -47,10 +47,6 @@ class CInstanceRegistry
 
 		//std::shared_timed_mutex  meC_RegistryLock;
 		//
-
-		int mesi_IBDTotalChannelCount;
-		int mesi_OBDTotalChannelCount;
-		
 		std::mutex meC_RegistryLock;
 		// map<ipPort,busycount> 
 	protected:
@@ -124,16 +120,16 @@ class CInstanceRegistry
 		bool 	mcfn_updateClientAddress(const string& CL_SignalingIpPort, char* pscL_IpAddress, const int& siL_Port);
 
 		void 	mcfn_eraseInstanceInfo(const string& CL_SignalingIpPort);
-
-		int 	mcfn_getOBDTotalChannelCount() { return mesi_OBDTotalChannelCount;	}
-		int 	mcfn_getIBDTotalChannelCount() { return mesi_IBDTotalChannelCount;	}
-
-		void mcfn_incrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo);
-                void mcfn_decrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo);
-
-		bool mcfn_updateTotalChannelCount();
-
 		bool 	mcfn_loadIntoServiceResource();
+
+		int 	mcfn_getOBDTotalChannelCount(const string&);
+		int 	mcfn_getIBDTotalChannelCount(const string&);
+
+		bool 	mcfn_checkAndIncrement(const string&, const string&);
+		bool	mcfn_checkAndDecrement(const string&, const string&);
+
+		bool 	mcfn_setOBDTotalChannelCount(const string&,const int&);
+		bool    mcfn_setIBDTotalChannelCount(const string&,const int&);
 
 }; // end of class InstanceRegistry
 

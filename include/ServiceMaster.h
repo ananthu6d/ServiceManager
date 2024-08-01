@@ -105,6 +105,9 @@ class CServiceMaster
 
 		bool mcfn_getServiceName(const string& CL_ServiceId_Type,char* pscL_ServiceName);
 
+		bool mcfn_loadTotalBusyCount();
+
+
 		
 }; // end of class ServiceMaster
 

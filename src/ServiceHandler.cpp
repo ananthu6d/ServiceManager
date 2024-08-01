@@ -51,6 +51,7 @@ CServiceHandler::CServiceHandler()
 	meC_CurrentResource	= meC_ResourceMap.begin();
 	mesi_AllotedCap 	= 0x00;
 	mesc_Status		= 'A';
+	mesi_TotalServiceBusyCount = 0x00;
 
 	__return__();
 }
@@ -291,7 +292,7 @@ void CServiceHandler::mefn_processAddResource(CServiceResource* pCL_ServiceResou
 	}
 
 
-	//mefn_calculateResourceCount(pCL_ServiceResource->mcfn_getSignalingIP()+":"+to_string(pCL_ServiceResource->mcfn_getSignalingPort()));
+	mefn_updateTotalChannelCount();
 
 	__return__();
 }
@@ -323,10 +324,7 @@ void CServiceHandler::mefn_processLoadResource(CServiceResource* pCL_ServiceReso
 	
 	meC_ResourceMap.insert({pCL_ServiceResource->mcfn_getSignalingIP()+":"+to_string(pCL_ServiceResource->mcfn_getSignalingPort()),pCL_ServiceResource});
 
-	pCL_ServiceResource->mcfn_InsertIntoExternalCache();
-
-	//mefn_calculateResourceCount(pCL_ServiceResource->mcfn_getSignalingIP()+":"+to_string(pCL_ServiceResource->mcfn_getSignalingPort()));
-
+	//pCL_ServiceResource->mcfn_InsertIntoExternalCache();
 	__return__();
 }
 
@@ -358,6 +356,7 @@ void CServiceHandler::mefn_processRemoveResource(string CL_SignalingIpPort)
 			usleep(DBFAILURESLEEPDUR);
 		}
 		//mefn_calculateResourceCount(CL_SignalingIpPort);
+		mefn_updateTotalChannelCount();
 		__return__();
 
 	}
@@ -391,7 +390,7 @@ void CServiceHandler::mefn_processActivateService(string CL_SignalingIpPort)
 				break;
 		}
 
-		//mefn_calculateResourceCount(CL_SignalingIpPort);
+		mefn_updateTotalChannelCount();
 		__return__();
 	}
 	EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processActivateService", "Failure", this,"", "Resource Not Found with InstanceId :%d",CL_SignalingIpPort);
@@ -419,6 +418,7 @@ void CServiceHandler::mefn_processDeactivateService(string CL_SignalingIpPort)
 		//lL_Itr->second->mcfn_resetAllotedResourceCap();
 	}
 
+	mefn_updateTotalChannelCount();
 	//mefn_calculateResourceCount(CL_SignalingIpPort);
 	__return__();
 }
@@ -434,15 +434,12 @@ bool CServiceHandler::mcfn_fetchResource(char* pscL_SignalingIp,long& slL_Signal
 		__return__(false);
 	}
 
-
-	/*
-	if(!CResourceCache::mcfn_getInstance()->mcfn_incrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),mesi_LicenseCap))
+	if(mesi_TotalServiceBusyCount >= mesi_LicenseCap)
 	{
 		siL_ErrorCode = ER_RESOURCE_BUSY;
-		__return__(false);	
+                __return__(false);
 	}
 
-	*/
 	int siL_ResourceCount = meC_ResourceMap.size();
 
 	bool bL_IsInstanceAvailable = false;
@@ -452,14 +449,23 @@ bool CServiceHandler::mcfn_fetchResource(char* pscL_SignalingIp,long& slL_Signal
 		{
 			meC_CurrentResource = meC_ResourceMap.begin();
 		}
-
 		if(meC_CurrentResource->second->mcfn_getStatus()=='A')
 		{
 			bL_IsInstanceAvailable = true;
 			if(meC_CurrentResource->second->mcfn_getNextResource(pscL_SignalingIp,slL_SignalingPort,siL_InstanceId))
 			{
-				++meC_CurrentResource;
-				__return__(true);
+				string CL_SignalingIpPort = pscL_SignalingIp;
+				CL_SignalingIpPort.append(":"+to_string(slL_SignalingPort));
+				if(CInstanceRegistry::mcfn_getInstance()->mcfn_checkAndIncrement(CL_SignalingIpPort,meC_ServiceType))
+				{
+					if(CResourceCache::mcfn_getInstance()->mcfn_incrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),CL_SignalingIpPort))
+					{
+						mesi_TotalServiceBusyCount++;
+                                                meC_CurrentResource->second->mcfn_incrementBusyCount();
+					}
+					++meC_CurrentResource;
+					__return__(true);
+				}
 			}
 		}
 		++meC_CurrentResource;
@@ -476,22 +482,32 @@ bool CServiceHandler::mcfn_fetchResource(char* pscL_SignalingIp,long& slL_Signal
 }
 bool CServiceHandler::mcfn_releaseResource(string CL_SignalingIpPort,int& siL_ErrorCode)
 {
-
+	__entryFunction__;
         lock_guard<mutex> CL_Lock(meC_ResourceMutex);
 	auto lL_Itr = meC_ResourceMap.find(CL_SignalingIpPort);
 	if(lL_Itr == meC_ResourceMap.end())
 	{
 		siL_ErrorCode = ER_NO_INSTANCE_REG;
-		return false;
+		__return__(false);
 	}
 
-	if(!lL_Itr->second->mcfn_releaseResource())
+	if(mesi_TotalServiceBusyCount <= 0x00)
 	{
 		siL_ErrorCode = ER_RELEASE_FALIURE;
-		return false;
+		__return__(false);
 	}
-	//CResourceCache::mcfn_getInstance()->mcfn_decrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),CL_SignalingIpPort);
-	return true;
+
+	if(CInstanceRegistry::mcfn_getInstance()->mcfn_checkAndDecrement(CL_SignalingIpPort,meC_ServiceType))
+	{
+		if(CResourceCache::mcfn_getInstance()->mcfn_decrementBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),CL_SignalingIpPort))
+		{
+			mesi_TotalServiceBusyCount--;
+			lL_Itr->second->mcfn_decrementBusyCount();
+			__return__(true);
+		}
+	}
+	siL_ErrorCode = ER_RELEASE_FALIURE;
+	__return__(false);
 }
 
 void CServiceHandler::mefn_processResetBusyCount(string CL_SignalingIpPort)
@@ -508,13 +524,27 @@ void CServiceHandler::mefn_processResetBusyCount(string CL_SignalingIpPort)
 void CServiceHandler::mefn_updateTotalChannelCount()
 {
 
-	lock_guard<mutex> CL_Lock(meC_ResourceMutex);
 	if(meC_ServiceType=="IBD")
 	{
-		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getIBDTotalChannelCount();
+		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getIBDTotalChannelCount(meC_ServiceType+"_"+to_string(mesi_ServiceId));
 	}
 	else
 	{
-		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getIBDTotalChannelCount();
+		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getOBDTotalChannelCount(meC_ServiceType+"_"+to_string(mesi_ServiceId));
 	}
+	EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "mefn_updateTotalChannelCount", "Success", this,"", "LicenseCap:%d",mesi_LicenseCap);
+
+}
+
+bool CServiceHandler::mcfn_setResourceBusyCount(const string& CL_SignalingIpPort,const int& siL_ServiceBusyCount)
+{
+	lock_guard<mutex> CL_Lock(meC_ResourceMutex);
+	auto lL_Itr = meC_ResourceMap.find(CL_SignalingIpPort);
+        if(lL_Itr != meC_ResourceMap.end())
+        {
+		lL_Itr->second->mcfn_setBusyCount(siL_ServiceBusyCount);
+		return true;	
+        }
+	return false;
+
 }

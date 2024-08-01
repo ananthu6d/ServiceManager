@@ -50,6 +50,7 @@ class CServiceResource
 		int	mesi_ServiceId;
 		int 	mesi_InstanceId;
 		int 	mesi_TotalChannel; //Remove
+		int 	mesi_BusyCount;
 
 		//
 		//BusyCount
@@ -77,6 +78,7 @@ class CServiceResource
 			mesc_Status 		= 'A';
 			mesi_ServiceId		= 0x00;
 			mesi_TotalChannel	= 0x00;
+			mesi_BusyCount		= 0x00;
 		}
 		//Destructor
 		~CServiceResource()
@@ -110,7 +112,8 @@ class CServiceResource
 		{
 			if(mesc_Status == 'D')
 			{
-				mesc_Status = 'A';
+				mesc_Status	= 'A';
+				mesi_BusyCount	= 0x00;
 				return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 			}
 			return true;
@@ -123,11 +126,13 @@ class CServiceResource
 			{
 				mesc_Status = 'A';
 			}
+			mesi_BusyCount  = 0x00;
 			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));	
 		}
 
 		bool 	mcfn_resetBusyCountInExternalCache()
 		{
+			mesi_BusyCount  = 0x00;
 			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 		}
 
@@ -138,6 +143,7 @@ class CServiceResource
 		void 	mcfn_setStatus(const char scL_Status)       	{ mesc_Status=scL_Status;		}
 		void 	mcfn_setServiceId(const int& siL_Id)         	{ mesi_ServiceId = siL_Id;             	}
 		void 	mcfn_setTotalChannel(const int& siL_Count)      { mesi_TotalChannel = siL_Count;        }
+		void 	mcfn_setBusyCount(const int& siL_Count)		{ mesi_BusyCount = siL_Count;		}
 
 		string 	mcfn_getSignalingIP()                        	{ return meC_SignalingIP;             	}
 		string 	mcfn_getServiceType()                        	{ return meC_ServiceType;             	}
@@ -146,6 +152,10 @@ class CServiceResource
 		char 	mcfn_getStatus()                            	{ return mesc_Status;                  	}
 		int 	mcfn_getServiceId()                        	{ return mesi_ServiceId;               	}
 		int 	mcfn_getTotalChannel()                        	{ return mesi_TotalChannel;             }
+		int     mcfn_getBusyCount(const int& siL_Count)         { return mesi_BusyCount;	        }
+		void 	mcfn_incrementBusyCount()			{ mesi_BusyCount++;			}
+		void 	mcfn_decrementBusyCount()			{ mesi_BusyCount--;			}
+		void 	mcfn_resetBusyCount()				{ mesi_BusyCount = 0;			}
 
 
 };

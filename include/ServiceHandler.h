@@ -38,13 +38,14 @@ class CServiceHandler : public IEventListener
 		 * Private Variables
 		 */
 		char  	pmesc_ServiceName[20];
+		char 	mesc_Status;
+
 		string 	meC_ServiceType;
 
 		int 	mesi_ServiceId;
 		int 	mesi_LicenseCap;
-
-		char 	mesc_Status;
 		int 	mesi_AllotedCap; //NotUsed
+		int 	mesi_TotalServiceBusyCount;
 
 		long 	mesl_SynKey;
 
@@ -123,6 +124,7 @@ class CServiceHandler : public IEventListener
 		void 	mcfn_setServiceType(const string& CL_ServiceType) 	{ meC_ServiceType = CL_ServiceType; 		}
 		void 	mcfn_setLicenseCap(const int& siL_LicenseCap) 		{ mesi_LicenseCap = siL_LicenseCap;		}
 		void 	mcfn_setAllotedCap(const int& siL_AllotedCap) 		{ mesi_AllotedCap = siL_AllotedCap;		}
+		void 	mcfn_setTotalServiceBusyCount(const int& siL_BusyCount)	{ mesi_TotalServiceBusyCount = siL_BusyCount;	}
 		void 	mcfn_setStatus(const char& scL_status) 			{ mesc_Status = scL_status;   			}
 		void 	mcfn_setLicenseCapPercentage(const float& fL_CapPer) 	{ mef_LicenseCapPercentage =  fL_CapPer; 	}
 
@@ -130,13 +132,15 @@ class CServiceHandler : public IEventListener
 		int 	mcfn_getServiceId() 				{ return mesi_ServiceId;  		}
 		string 	mcfn_getServiceType() 				{ return meC_ServiceType;		}
 		int 	mcfn_getLicenseCap() 				{ return mesi_LicenseCap; 		}
-		int 	mcfn_getAllotedCap() 				{ return mesi_AllotedCap; 		}
 		char 	mcfn_getStatus() 				{ return mesc_Status;     		}
+		int 	mcfn_getAllotedCap() 				{ return mesi_AllotedCap; 		}
+		int 	mcfn_getTotalServiceBusyCount() 		{ return mesi_TotalServiceBusyCount;	}
 		float 	mcfn_getLicenseCapPercentage() 			{ return mef_LicenseCapPercentage;	}
 
 		bool 	mcfn_fetchResource(char* pscL_SignalingIp,long& slL_SignalingPort,int& siL_InstanceId,int& siL_ErrorCode);
 		bool 	mcfn_releaseResource(string CL_SignalingIpPort,int& siL_ErrorCode);
 
+		bool 	mcfn_setResourceBusyCount(const string&,const int&);
 };
 
 #endif

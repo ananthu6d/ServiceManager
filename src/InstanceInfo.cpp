@@ -39,13 +39,15 @@ CInstanceInfo::CInstanceInfo()
 	pmcC_EnquiryTimer               = nullptr;
 	pmcC_EnquiryTimer               = new CEnquiryTimer();
 	pmcC_RequestTimer               = new CRequestTimer();
-	mesi_TotalResourceCount         = 0;
-	mesi_InboundResourceCount       = 0;
-	mesi_OutboundResourceCount      = 0;
-	mesi_InstanceId                 = 0;
-	mesi_HeartBeatMissCount         = 0;
-	mesl_ClientPort                 = 0;
+	mesi_TotalResourceCount         = 0x00;
+	mesi_InboundResourceCount       = 0x00;
+	mesi_OutboundResourceCount      = 0x00;
+	mesi_InstanceId                 = 0x00;
+	mesi_HeartBeatMissCount         = 0x00;
+	mesl_ClientPort                 = 0x00;
 	mesi_SignalingPort              = 0x00;
+	mesi_IBDBusyCount		= 0x00;
+	mesi_OBDBusyCount		= 0x00;
 	memset(pmesc_ClientIP,          0x00, sizeof(pmesc_ClientIP));
 	memset(pmesc_LastHeartBeatTime, 0x00, sizeof(pmesc_LastHeartBeatTime));
 	memset(pmesc_RegistrationTime,  0x00, sizeof(pmesc_RegistrationTime));
@@ -83,4 +85,59 @@ CInstanceInfo::~CInstanceInfo()
 	}
 } // end of Destructor
 
+bool CInstanceInfo::mcfn_checkAndIncrementIBDBusyCount()
+{
+	lock_guard<mutex> CL_Lock(meC_InstanceLock);
+	if(mesi_IBDBusyCount < mesi_InboundResourceCount)
+	{
+		mesi_IBDBusyCount++;
+		return true;
+	}
+	return false;
+
+}
+bool CInstanceInfo::mcfn_checkAndIncrementOBDBusyCount()
+{
+	lock_guard<mutex> CL_Lock(meC_InstanceLock);
+	if(mesi_OBDBusyCount < mesi_OutboundResourceCount)
+	{
+		mesi_OBDBusyCount++;
+		return true;
+	}
+	return false;
+
+}
+bool CInstanceInfo::mcfn_checkAndDecrementIBDBusyCount()
+{
+	lock_guard<mutex> CL_Lock(meC_InstanceLock);
+	if(mesi_IBDBusyCount > 0x00)
+	{
+		mesi_IBDBusyCount--;
+		return true;
+	}
+	return false;
+}
+bool CInstanceInfo::mcfn_checkAndDecrementOBDBusyCount()
+{
+	lock_guard<mutex> CL_Lock(meC_InstanceLock);
+	if(mesi_OBDBusyCount > 0x00)
+	{
+		mesi_OBDBusyCount--;
+		return true;
+	}
+	return false;
+}
+bool CInstanceInfo::mcfn_findAndCheckForActiveService(const string& CL_ServiceTypeId)
+{
+	lock_guard<mutex> CL_Lock(meC_InstanceLock);
+	auto lL_Itr= meC_ServiceInfoMap.find(CL_ServiceTypeId);
+	if(lL_Itr!=meC_ServiceInfoMap.end())
+	{
+		if(lL_Itr->second->mcfn_getStatus() == "A")
+		{
+			return true;
+		}	
+	}
+	return true;
+}
 

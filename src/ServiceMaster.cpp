@@ -24,6 +24,8 @@
 #include "AppExterns.h"
 #include "AppDefines.h"
 #include "ServiceMaster.h"
+#include "ResourceCache.h"
+#include "InstanceRegistry.h"
 
 using namespace _6d;
 /**
@@ -166,4 +168,57 @@ bool CServiceMaster::mcfn_getServiceName(const string& CL_ServiceId_Type,char* p
 		return true;
 	}
 	return false;	
+}
+
+bool CServiceMaster::mcfn_loadTotalBusyCount()
+{
+	__entryFunction__;
+	unordered_map<string,string> CL_InstanceBusyMap;
+	map<string,int> CL_TotalIBDInstanceBusyCountMap;
+	map<string,int> CL_TotalOBDInstanceBusyCountMap;
+	int siL_ServiceTotal = 0x00;
+	for(const auto& lL_ServiceItr : meC_ServiceHandlerMap)
+	{
+		siL_ServiceTotal = 0x00;
+		if(CResourceCache::mcfn_getInstance()->mcfn_getHashMapFromResourceCache(lL_ServiceItr.first,CL_InstanceBusyMap))
+		{
+			for (const auto& lL_InstanceItr : CL_InstanceBusyMap) 
+			{
+				siL_ServiceTotal += atoi(lL_InstanceItr.second.c_str());
+				if(lL_ServiceItr.second->mcfn_getServiceType() == "IBD")
+				{
+					CL_TotalIBDInstanceBusyCountMap[lL_InstanceItr.first] += atoi(lL_InstanceItr.second.c_str());
+				}
+				else
+				{
+					CL_TotalOBDInstanceBusyCountMap[lL_InstanceItr.first] += atoi(lL_InstanceItr.second.c_str());
+				}
+
+				lL_ServiceItr.second->mcfn_setResourceBusyCount(lL_InstanceItr.first,atoi(lL_InstanceItr.second.c_str()));
+				EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "mcfn_loadTotalBusyCount", "Resource", this,"", "ServiceTypeId:%s,SiganalingIpPort:%s,TotalResourceBusyCount:%s",lL_ServiceItr.first.c_str(),lL_InstanceItr.first.c_str(),lL_InstanceItr.second.c_str());
+
+			}
+			EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "mcfn_loadTotalBusyCount", "Service", this,"", "ServiceTypeId:%s,TotalBusyCount:%d",lL_ServiceItr.first.c_str(),siL_ServiceTotal);
+			lL_ServiceItr.second->mcfn_setTotalServiceBusyCount(siL_ServiceTotal);
+		}	
+	}
+
+	for(const auto& lL_InstanceItr : CL_TotalIBDInstanceBusyCountMap)
+	{
+		if(!CInstanceRegistry::mcfn_getInstance()->mcfn_setOBDTotalChannelCount(lL_InstanceItr.first,lL_InstanceItr.second))
+		{
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "mcfn_loadTotalBusyCount", "Set Failure", this,"", "SignalingIpPort:%s,OBDTotalChannelCount:%d",lL_InstanceItr.first.c_str(),lL_InstanceItr.second);
+		}
+		EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "mcfn_loadTotalBusyCount", "Instance", this,"", "SignalingIpPort:%s,OBDTotalChannelCount:%d",lL_InstanceItr.first.c_str(),lL_InstanceItr.second);
+	}
+
+	for(const auto& lL_InstanceItr : CL_TotalIBDInstanceBusyCountMap)
+        {
+                if(!CInstanceRegistry::mcfn_getInstance()->mcfn_setIBDTotalChannelCount(lL_InstanceItr.first,lL_InstanceItr.second))
+                {
+                        EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "mcfn_loadTotalBusyCount", "Set Failure", this,"", "SignalingIpPort:%s,IBDTotalChannelCount:%d",lL_InstanceItr.first.c_str(),lL_InstanceItr.second);
+                }
+		EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "mcfn_loadTotalBusyCount", "Instance", this,"", "SignalingIpPort:%s,IBDTotalChannelCount:%d",lL_InstanceItr.first.c_str(),lL_InstanceItr.second);
+        }
+	__return__(true);	
 }

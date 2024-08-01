@@ -45,8 +45,6 @@ CInstanceRegistry::CInstanceRegistry()
 	__entryFunction__;
 
 	pmeC_Registry = new std::map<string,CInstanceInfo*>;
-	mesi_IBDTotalChannelCount = 0x00;
-	mesi_OBDTotalChannelCount = 0x00;
 	__return__();
 }
 
@@ -85,7 +83,6 @@ bool CInstanceRegistry::mcfn_insertInstanceInfo(const string& CL_SignalingIpPort
 	{
 		if(pmeC_Registry->insert({CL_SignalingIpPort,&CL_InstanceInfo}).second)
 		{
-			//mesi_IBDTotalChannelCount += pCL_InstanceInfo->mcfn_getInboundResourceCount();
 			return true;
 		}
 	}
@@ -127,7 +124,6 @@ bool CInstanceRegistry::mcfn_insertInstanceInfo(const string& CL_SignalingIpPort
         {
                 if(pmeC_Registry->insert({CL_SignalingIpPort,pCL_InstanceInfo}).second)
                 {
-			mesi_IBDTotalChannelCount += pCL_InstanceInfo->mcfn_getInboundResourceCount();	
                         return true;
                 }
         }
@@ -144,16 +140,16 @@ bool CInstanceRegistry::mcfn_insertInstanceInfo(const string& CL_SignalingIpPort
 
 bool CInstanceRegistry::mcfn_getInstanceInfo(const string& CL_SignalingIpPort, CInstanceInfo& CL_InstanceInfo)
 {
+	/*
+	lock_guard<mutex> CL_Lock(meC_RegistryLock);
+	auto lL_Itr = pmeC_Registry->find(CL_SignalingIpPort);
+	if(lL_Itr != pmeC_Registry->end())
 	{
-		lock_guard<mutex> CL_Lock(meC_RegistryLock);
-		auto lL_Itr = pmeC_Registry->find(CL_SignalingIpPort);
-		if(lL_Itr != pmeC_Registry->end())
-		{
-			CL_InstanceInfo = *(lL_Itr->second);
-			return true;
-		}
+		CL_InstanceInfo = *(lL_Itr->second);
+		return true;
 	}
 	return false;
+	*/
 
 }
 
@@ -222,7 +218,6 @@ bool CInstanceRegistry::mcfn_deActivateInstanceInfo(const string& CL_SignalingIp
 	auto lL_Itr = pmeC_Registry->find(CL_SignalingIpPort);
 	if(lL_Itr != pmeC_Registry->end())
 	{
-		mesi_IBDTotalChannelCount -= lL_Itr->second->mcfn_getInboundResourceCount();
 		lL_Itr->second->mcfn_deactivateInstance();
 		return true;
 	}
@@ -243,7 +238,6 @@ bool CInstanceRegistry::mcfn_activateInstanceInfo(const string& CL_SignalingIpPo
         auto lL_Itr = pmeC_Registry->find(CL_SignalingIpPort);
         if(lL_Itr != pmeC_Registry->end())
         {
-		mesi_IBDTotalChannelCount += lL_Itr->second->mcfn_getInboundResourceCount();
                 lL_Itr->second->mcfn_activateInstance();
                 return true;
 	}
@@ -374,63 +368,90 @@ bool CInstanceRegistry::mcfn_loadIntoServiceResource()
 	return true;
 }
 	
-void CInstanceRegistry::mcfn_incrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo)
-{
-	for(const auto& lL_Itr : pCL_InstanceInfo->mcfn_getServiceMap())
-	{
-		if(lL_Itr.second->mcfn_getServiceType() == "IBD")
-		{
-			mesi_IBDTotalChannelCount += pCL_InstanceInfo->mcfn_getInboundResourceCount();
-		}
-		else
-		{
-			mesi_OBDTotalChannelCount += pCL_InstanceInfo->mcfn_getOutboundResourceCount();
-		}
-	}
 
-}
-void CInstanceRegistry::mcfn_decrementTotalChannelCount(const CInstanceInfo* pCL_InstanceInfo)
-{
-        for(const auto& lL_Itr : pCL_InstanceInfo->mcfn_getServiceMap())
-        {
-                if(lL_Itr.second->mcfn_getServiceType() == "IBD")
-		{
-			mesi_IBDTotalChannelCount -= pCL_InstanceInfo->mcfn_getInboundResourceCount();
-		}
-		else
-		{
-			mesi_OBDTotalChannelCount -= pCL_InstanceInfo->mcfn_getOutboundResourceCount();
-		}
-	}
-}
-
-bool CInstanceRegistry::mcfn_updateTotalChannelCount()
+bool CInstanceRegistry::mcfn_checkAndIncrement(const string& CL_SignalingIpPort,const string& CL_ServiecType)
 {
 	lock_guard<mutex> CL_Lock(meC_RegistryLock);
-	mesi_OBDTotalChannelCount = 0x00;
-	mesi_IBDTotalChannelCount = 0x00;
-	for(const auto& lL_InstanceItr : *pmeC_Registry)
+	auto lL_InstaneItr = pmeC_Registry->find(CL_SignalingIpPort);
+	if(lL_InstaneItr != pmeC_Registry->end())
 	{
-		if(lL_InstanceItr.second->mcfn_getStatus() == 'A')
-		{
-			for(const auto& lL_Itr : lL_InstanceItr.second->mcfn_getServiceMap())
-			{
-				if(lL_Itr.second->mcfn_getStatus() == 'A')
-				{
-					if(lL_Itr.second->mcfn_getServiceType() == "IBD")
-					{
-						mesi_IBDTotalChannelCount += lL_InstanceItr.second->mcfn_getInboundResourceCount();
-					}
-					else
-					{
-						mesi_OBDTotalChannelCount += lL_InstanceItr.second->mcfn_getOutboundResourceCount();
-					}
-				}
-			}
-		}	
+		if(CL_ServiecType == "IBD")
+			return lL_InstaneItr->second->mcfn_checkAndIncrementIBDBusyCount();
+		else
+			return lL_InstaneItr->second->mcfn_checkAndIncrementOBDBusyCount();
 	}
-	EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "InstanceRegistry", "updateTotalChannelCount", this,"","IBDTotalChannelCount:%d, OBDTotalChannelCount:%d",mesi_IBDTotalChannelCount,mesi_OBDTotalChannelCount);
-	return true;
+	return false;
+}
+
+bool CInstanceRegistry::mcfn_checkAndDecrement(const string& CL_SignalingIpPort,const string& CL_ServiecType)
+{
+        lock_guard<mutex> CL_Lock(meC_RegistryLock);
+        auto lL_InstaneItr = pmeC_Registry->find(CL_SignalingIpPort);
+        if(lL_InstaneItr != pmeC_Registry->end())
+        {
+                if(CL_ServiecType == "IBD")
+                        return lL_InstaneItr->second->mcfn_checkAndDecrementIBDBusyCount();
+                else
+                        return lL_InstaneItr->second->mcfn_checkAndDecrementOBDBusyCount();
+        }
+        return false;
+}
+
+int CInstanceRegistry::mcfn_getOBDTotalChannelCount(const string& CL_ServiceTypeId)
+{
+	lock_guard<mutex> CL_Lock(meC_RegistryLock);
+	int siL_OBDTotalChannelCount = 0x00;
+	for(const auto& lL_InstanceItr : *pmeC_Registry)
+        {
+                if(lL_InstanceItr.second->mcfn_getStatus() == 'A')
+                {
+			if(lL_InstanceItr.second->mcfn_findAndCheckForActiveService(CL_ServiceTypeId))
+			{
+				siL_OBDTotalChannelCount += lL_InstanceItr.second->mcfn_getOutboundResourceCount();
+			}
+                }
+        }
+	return siL_OBDTotalChannelCount;
+}
+int CInstanceRegistry::mcfn_getIBDTotalChannelCount(const string& CL_ServiceTypeId)
+{
+	lock_guard<mutex> CL_Lock(meC_RegistryLock);
+        int siL_IBDTotalChannelCount = 0x00;
+        for(const auto& lL_InstanceItr : *pmeC_Registry)
+        {
+                if(lL_InstanceItr.second->mcfn_getStatus() == 'A')
+                {
+                        if(lL_InstanceItr.second->mcfn_findAndCheckForActiveService(CL_ServiceTypeId))
+                        {
+				siL_IBDTotalChannelCount += lL_InstanceItr.second->mcfn_getInboundResourceCount();
+			}
+		}
+	}
+	return siL_IBDTotalChannelCount;
+}
+bool CInstanceRegistry::mcfn_setIBDTotalChannelCount(const string& CL_SignalingIpPort,const int& siL_BusyCount)
+{
+	lock_guard<mutex> CL_Lock(meC_RegistryLock);
+        auto lL_InstaneItr = pmeC_Registry->find(CL_SignalingIpPort);
+        if(lL_InstaneItr != pmeC_Registry->end())
+        {
+		lL_InstaneItr->second->mcfn_setIBDBusyCount(siL_BusyCount);
+		return true;
+        }
+        return false;
+	
+}
+bool CInstanceRegistry::mcfn_setOBDTotalChannelCount(const string& CL_SignalingIpPort,const int& siL_BusyCount)
+{
+	lock_guard<mutex> CL_Lock(meC_RegistryLock);
+        auto lL_InstaneItr = pmeC_Registry->find(CL_SignalingIpPort);
+        if(lL_InstaneItr != pmeC_Registry->end())
+        {
+                lL_InstaneItr->second->mcfn_setOBDBusyCount(siL_BusyCount);
+                return true;
+        }
+        return false;
+
 }
 
 
