@@ -52,14 +52,14 @@ typedef struct _SEventInfo
 	char pmcsc_SignalingIpPort[70];
 	long mcsl_ClientPort;
 	long mcsl_EventInfo;
-	//int mcsi_TotalChannel; 
+	int mcsi_TotalBusyCount; 
         int mcsi_EventType; // Event Type
 	_SEventInfo()
 	{
 		pmcsc_ClientIp[0]		= 0x00;
 		pmcsc_SignalingIpPort[0]	= 0x00;
 		mcsl_ClientPort			= 0x00;
-		//mcsi_TotalChannel		= 0x00;
+		mcsi_TotalBusyCount		= 0x00;
 		mcsi_EventType			= 0x00;
 	}
 }SEventInfo;
@@ -86,5 +86,21 @@ typedef struct _SServiceManagerEvent
 		pmcsc_ProtoBuffEvent[0]=0x00;
 	}
 }SServiceManagerEvent;
+
+
+typedef struct _SResourceCacheEvent
+{
+	string mcC_ServiceTypeId;
+	string mcC_SignalingIpPort;
+	int mcsi_BusyCount;
+	int mcsi_Type;
+        _SResourceCacheEvent()
+        {
+		mcC_ServiceTypeId	= "";
+		mcC_SignalingIpPort	= "";
+		mcsi_BusyCount		= 0x00;
+		mcsi_Type		= 0x00;
+        }
+}SResourceCacheEvent;
 
 #endif

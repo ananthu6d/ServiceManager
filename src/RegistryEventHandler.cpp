@@ -194,6 +194,11 @@ void CRegistryEventHandler::mcfn_onNotifyEvent(CGenericEvent& CL_GenericEvent,lo
 				mefn_processRequestTimeout((CInstanceInfo*)pSL_EventInfo->mcsl_EventInfo);
 				break;
 			}
+		case EVT_FORCE_ENQUIRY:
+			{
+				mefn_processForceEnquiry((CInstanceInfo*)pSL_EventInfo->mcsl_EventInfo);
+				break;
+			}
 		case EVT_PURGE_INSTANCE:
 			{
 
@@ -413,7 +418,7 @@ bool CRegistryEventHandler::mefn_processRegistrationResource(const ResourceRegis
 		CServiceHandler* pCL_ServiceHandler=nullptr;
 		if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(lL_Itr.first,&pCL_ServiceHandler))
 		{
-			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",lL_Itr.first);
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for ServiceTypeId:%s",lL_Itr.first.c_str());
 			//mesi_StatusCode = ER_NO_SERVICE;
 			//sprintf(pmesc_StatusDesc,"Service With Id:%d is Not Available,Registration Failed!",lL_Itr.first);
 			//__return__(false)
@@ -628,9 +633,9 @@ bool CRegistryEventHandler::mefn_updateResources(const ResourceRegistrationReq& 
 			pCL_InstanceInfo->mcfn_deactivateService(lL_Itr.first);
 			EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "updateResources", "Success", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "Deactivated ServiceId:%d",lL_Itr.first);
 			CServiceHandler* pCL_ServiceHandler = nullptr;
-			if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(lL_Itr.second->mcfn_getServiceType()+"_"+lL_Itr.first,&pCL_ServiceHandler))
+			if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(lL_Itr.first,&pCL_ServiceHandler))
 			{
-				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",lL_Itr.first);
+				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for ServiceTypeId:%s",lL_Itr.first.c_str());
 			}
 			CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_DEACT_RESOURCE,pCL_InstanceInfo->mcfn_getSignalingIP().c_str(),pCL_InstanceInfo->mcfn_getSignalingPort());
 
@@ -647,7 +652,7 @@ bool CRegistryEventHandler::mefn_updateResources(const ResourceRegistrationReq& 
 			CServiceHandler* pCL_ServiceHandler = nullptr;
 			if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(CL_ServiceDetails.second+"_"+CL_ServiceDetails.first,&pCL_ServiceHandler))
 			{
-				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",atoi(CL_ServiceDetails.first.c_str()));
+				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for ServiceTypeId:%s_%s",CL_ServiceDetails.second.c_str(),CL_ServiceDetails.first.c_str());
 			}
 
 
@@ -703,7 +708,7 @@ bool CRegistryEventHandler::mefn_updateResources(const ResourceRegistrationReq& 
 			CServiceHandler* pCL_ServiceHandler = nullptr;
 			if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(CL_ServiceDetails.second+"_"+CL_ServiceDetails.first,&pCL_ServiceHandler))
 			{
-				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",atoi(CL_ServiceDetails.first.c_str()));
+				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%s_%s",CL_ServiceDetails.second.c_str(),CL_ServiceDetails.first.c_str());
 				mesi_StatusCode = ER_NO_SERVICE;
                                 sprintf(pmesc_StatusDesc,"Service With Id:%s is Not Available,Registration Failed!",CL_ServiceDetails.first);
 				__return__(false);
@@ -820,7 +825,7 @@ bool CRegistryEventHandler::mefn_processDeRegisterInstance(const ResourceDeRegis
 			CServiceHandler* pCL_ServiceHandler=nullptr;
 			if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(lL_Itr.first,&pCL_ServiceHandler))
 			{
-				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",lL_Itr.first);
+				EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for ServiceTypeId:%s",lL_Itr.first.c_str());
 			}
 			CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_REMOVE_RESOURCE,pCL_InstanceInfo->mcfn_getSignalingIP().c_str(),pCL_InstanceInfo->mcfn_getSignalingPort());
 
@@ -871,7 +876,7 @@ bool CRegistryEventHandler::mefn_processDeRegisterServiceResource(const Resource
 		CServiceHandler* pCL_ServiceHandler=nullptr;
 		if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(CL_ServiceDetails.second+"_"+CL_ServiceDetails.first,&pCL_ServiceHandler))
 		{
-			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for SericeId:%d",atoi(CL_ServiceDetails.first.c_str()));
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,"No Handler Found for ServiceTypeId:%s_%s",CL_ServiceDetails.second.c_str(),CL_ServiceDetails.first.c_str());
 		}
 		CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_REMOVE_RESOURCE,CL_ResourceDeRegistrationReq.signalingip().c_str(),CL_ResourceDeRegistrationReq.signalingport());
 	}
@@ -997,7 +1002,7 @@ void CRegistryEventHandler:: mefn_processRequestTimeout(CInstanceInfo* pCL_Insta
 		CServiceHandler* pCL_ServiceHandler=nullptr;
 		if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(lL_Itr.first,&pCL_ServiceHandler))
 		{
-			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,"","No Handler Found for SericeId:%d",lL_Itr.first);
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,"","No Handler Found for SericeId:%s",lL_Itr.first.c_str());
 			__return__();
 		}
 		CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_REMOVE_RESOURCE,pCL_InstanceInfo->mcfn_getSignalingIP().c_str(),pCL_InstanceInfo->mcfn_getSignalingPort());
@@ -1077,7 +1082,22 @@ void CRegistryEventHandler::mefn_processEnquiryResponse(const EnquireStatusResp&
 {
 	__entryFunction__;
 
-	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processEnquiryResponse", "RespData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId:%d,Signalingip:%s,Signalingport:%d,ClientIp:%s,ClientPort:%ld",CL_EnquireStatusResp.instanceid(),CL_EnquireStatusResp.signalingip().c_str(),CL_EnquireStatusResp.signalingport(),pmesc_ClientIp,mesl_ClientPort);
+	string CL_ServiceBusyCount = "[ ";
+	bool bL_IsFirstTime = true;
+
+	for(const auto& lL_BusyCountItr : CL_EnquireStatusResp.ibdbusycount())
+	{
+		if(!bL_IsFirstTime)
+		{
+			CL_ServiceBusyCount.append(",");
+			bL_IsFirstTime = false;
+		}
+
+		CL_ServiceBusyCount.append(lL_BusyCountItr.first+":"+to_string(lL_BusyCountItr.second));
+	}
+	CL_ServiceBusyCount.append(" ]");
+
+	EVT_LOG(CG_EventLog, LOG_INFO |LOG_OPINFO, siG_InstanceID, "processEnquiryResponse", "RespData", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "InstanceId:%d,Signalingip:%s,Signalingport:%d,ClientIp:%s,ClientPort:%ld,ServiceBusyCountMap:%s",CL_EnquireStatusResp.instanceid(),CL_EnquireStatusResp.signalingip().c_str(),CL_EnquireStatusResp.signalingport(),pmesc_ClientIp,mesl_ClientPort,CL_ServiceBusyCount.c_str());
 	
 	CInstanceInfo* pCL_InstanceInfo;
 	if(!CInstanceRegistry::mcfn_getInstance()->mcfn_getInstanceInfo(CL_EnquireStatusResp.signalingip()+":"+to_string(CL_EnquireStatusResp.signalingport()),&pCL_InstanceInfo))
@@ -1097,6 +1117,27 @@ void CRegistryEventHandler::mefn_processEnquiryResponse(const EnquireStatusResp&
 			break;
 		}
 		usleep(DBFAILURESLEEPDUR);
+	}
+
+	for (const auto& lL_Itr : pCL_InstanceInfo->mcfn_getServiceMap())
+	{
+		CServiceHandler* pCL_ServiceHandler = nullptr;                        
+		if(!CServiceMaster::mcfn_getInstance()->mcfn_getServiceHandler(lL_Itr.first,&pCL_ServiceHandler))
+		{
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "ServiceHandler", "Failure", this,"","No Handler Found for ServiceTypeId:%s",lL_Itr.first.c_str());
+		}
+
+		auto lL_ServiceItr = CL_EnquireStatusResp.ibdbusycount().find(lL_Itr.first);
+		if(lL_ServiceItr == CL_EnquireStatusResp.ibdbusycount().end())
+		{
+			//TODO: Deactivate Service
+			CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_DEACT_RESOURCE,pCL_InstanceInfo->mcfn_getSignalingIP().c_str(),pCL_InstanceInfo->mcfn_getSignalingPort());
+		}
+		else
+		{
+			CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pCL_ServiceHandler,EVT_VALIDATE_BUSYCOUNT,pCL_InstanceInfo->mcfn_getSignalingIP().c_str(),pCL_InstanceInfo->mcfn_getSignalingPort(),lL_ServiceItr->second);	
+		}
+		
 	}
 	pCL_InstanceInfo->pmcC_EnquiryTimer->mcfn_startEnquiryTimer(this,pCL_InstanceInfo,CG_AppConfigParams.mcfn_getPrimaryEquiryTimerMs());
 	__return__();
@@ -1269,4 +1310,30 @@ void CRegistryEventHandler::mefn_UpdateQueryBuilder(char* pscL_Query,const int& 
 	EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "UpdateQueryBuilder", "Success", this,pmeS_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId, "Type:%d,Query:%s",siL_Type,pscL_Query);
 
 	__return__();
+}
+
+/************************************************************************
+ * Class     : CRegistryEventHandler
+ * Method    : mefn_processEnquiryTimeout
+ * Purpose   : process Enquiry Timeout
+ * Arguments : CInstanceInfo*
+ * Returns   : none
+ ************************************************************************/
+
+void CRegistryEventHandler::mefn_processForceEnquiry(CInstanceInfo* pCL_InstanceInfo)
+{
+
+	__entryFunction__;
+	if(!pCL_InstanceInfo->pmcC_RequestTimer->mcfn_IsRequestTimerStarted())
+	{
+		pCL_InstanceInfo->pmcC_EnquiryTimer->mcfn_stopEnquiryTimer();
+		mefn_serilizeRequest(pCL_InstanceInfo->mcfn_getInstanceId(),pCL_InstanceInfo->mcfn_getSignalingIP(),pCL_InstanceInfo->mcfn_getSignalingPort());
+		meS_ServiceManagerEventResp.mcS_EventHeader.mcsi_SyncKey = pCL_InstanceInfo->mcfn_getInstanceId();
+
+		CUDPEventMonitor::mcfn_getInstance()->mcfn_sendTo((char*)&meS_ServiceManagerEventResp,meS_ServiceManagerEventResp.mcS_EventHeader.mcsi_ProtoBuffLength,pCL_InstanceInfo->mcfn_getClientIP(),pCL_InstanceInfo->mcfn_getClientPort());
+
+		pCL_InstanceInfo->pmcC_RequestTimer->mcfn_startRequestTimer(this,pCL_InstanceInfo,CG_AppConfigParams.mcfn_getMaxEnqiuryRequestTimeMs());
+	}
+	__return__();
+
 }

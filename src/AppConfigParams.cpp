@@ -92,6 +92,11 @@ void CAppConfigParams::mefn_readCfgParam(XMLNode &xMainNode,const char *pscL_Cfg
 		 int *psiL_Value = (int *)pL_Value;
 		*psiL_Value = atoi(xNode.getText());
 	}
+	if(siL_DataType == CFGFLOAT)
+        {
+                 float *psiL_Value = (float *)pL_Value;
+                *psiL_Value = atof(xNode.getText());
+        }
 	if(siL_DataType == CFGSTRING)
 	{
 		((char*)pL_Value)[0] = 0x00;
@@ -141,6 +146,11 @@ void CAppConfigParams::mefn_readCfgAttributeParam(XMLNode &xMainNode,const char 
 	if(siL_DataType == CFGLONG)
         {
                  long *pslL_Value = (long *)pL_Value;
+                *pslL_Value = atol(pscL_Value);
+        }
+	if(siL_DataType == CFGFLOAT)
+        {
+                 float *pslL_Value = (float *)pL_Value;
                 *pslL_Value = atol(pscL_Value);
         }
 	if(siL_DataType == CFGSTRING)
@@ -198,6 +208,7 @@ void CAppConfigParams::mcfn_readConfigurations()
 	mefn_readUDPIpAndPort(xMainNode);
 	mefn_readCfgParam(xMainNode,"ConsumerHandlerCount",CFGINT,&mesi_ConsumerHandlerCount);
 	mefn_readCfgParam(xMainNode,"ResourceExhaustLimit",CFGINT,&mesi_ResourceExhaustLimit);
+	mefn_readCfgParam(xMainNode,"ForceEnquiryPercentageLimit",CFGINT,&mesi_ForceEnquiryPercentageLimit);
 
 	xNode = xMainNode.getChildNode("PeriodicEnquiryDetails");
         if(xNode.isEmpty())

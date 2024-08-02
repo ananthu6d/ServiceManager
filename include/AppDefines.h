@@ -30,6 +30,7 @@ extern int siG_InstanceID;
 /**
  * Extern Declarations
  */
+#define DEFAULT_COUNT          	0
 #define MAXRETRY		3
 #define DIGITS 			"9876543210"
 #define ENQUIRY_TYPE		1
@@ -126,6 +127,9 @@ extern int siG_InstanceID;
 #define EVT_REMOVE_RESOURCE 	12
 #define EVT_LOAD_RESOURCE	13
 #define EVT_RESET_BUSYCOUNT	14
+#define EVT_FORCE_ENQUIRY	15
+#define EVT_VALIDATE_BUSYCOUNT	16
+
 /**
  * Periodoic Retry Types
  */
@@ -146,4 +150,18 @@ extern int siG_InstanceID;
 #define QB_TYPE_IBD_OBD		6
 #define QB_TYPE_TR_IBD_OBD 	7
 
+/**
+ * External Cache Event Types
+ */
+
+#define EXCACHE_TYPE_INCREMENT 		1
+#define EXCACHE_TYPE_DECREMENT 		2
+#define EXCACHE_TYPE_RESET 		3
+
+/**
+ * Bound Types
+ */
+
+#define BD_TYPE_IBD 		1
+#define BD_TYPE_OBD 		2
 #endif

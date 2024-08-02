@@ -180,6 +180,7 @@ bool CServiceMaster::mcfn_loadTotalBusyCount()
 	for(const auto& lL_ServiceItr : meC_ServiceHandlerMap)
 	{
 		siL_ServiceTotal = 0x00;
+		CL_InstanceBusyMap.clear();
 		if(CResourceCache::mcfn_getInstance()->mcfn_getHashMapFromResourceCache(lL_ServiceItr.first,CL_InstanceBusyMap))
 		{
 			for (const auto& lL_InstanceItr : CL_InstanceBusyMap) 

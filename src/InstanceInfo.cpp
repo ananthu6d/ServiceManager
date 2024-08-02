@@ -91,6 +91,7 @@ bool CInstanceInfo::mcfn_checkAndIncrementIBDBusyCount()
 	if(mesi_IBDBusyCount < mesi_InboundResourceCount)
 	{
 		mesi_IBDBusyCount++;
+		mefn_checkForForceEnquiry(BD_TYPE_IBD);
 		return true;
 	}
 	return false;
@@ -102,6 +103,7 @@ bool CInstanceInfo::mcfn_checkAndIncrementOBDBusyCount()
 	if(mesi_OBDBusyCount < mesi_OutboundResourceCount)
 	{
 		mesi_OBDBusyCount++;
+		mefn_checkForForceEnquiry(BD_TYPE_OBD);
 		return true;
 	}
 	return false;
@@ -139,5 +141,27 @@ bool CInstanceInfo::mcfn_findAndCheckForActiveService(const string& CL_ServiceTy
 		}	
 	}
 	return true;
+}
+
+void CInstanceInfo::mefn_checkForForceEnquiry(int siL_BoundType)
+{
+	switch(siL_BoundType)
+	{
+		case BD_TYPE_IBD:
+			{
+				if((mesi_IBDBusyCount*100)/mesi_InboundResourceCount >= CG_AppConfigParams.mcfn_getForceEnquiryPercentageLimit())
+				{
+					CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(EVT_FORCE_ENQUIRY,(long)this);
+				}
+			}
+			break;
+		case BD_TYPE_OBD:
+			{
+				if((mesi_OBDBusyCount*100)/mesi_OutboundResourceCount >= CG_AppConfigParams.mcfn_getForceEnquiryPercentageLimit())
+				{                                        
+					CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(EVT_FORCE_ENQUIRY,(long)this);
+				}
+			}
+	}
 }
 

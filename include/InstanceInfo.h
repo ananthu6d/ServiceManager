@@ -71,6 +71,11 @@ class CInstanceInfo
 		CEnquiryTimer* pmcC_EnquiryTimer;
 		
 
+	private:
+		/**
+                 * Private Functions
+                 */
+		void 	mefn_checkForForceEnquiry(int);
 	public:
 		/**
                  * Public Functions
@@ -141,6 +146,9 @@ class CInstanceInfo
                 bool    mcfn_checkAndDecrementOBDBusyCount();
 
 		bool 	mcfn_findAndCheckForActiveService(const string&);
+
+
+
 
 };
 

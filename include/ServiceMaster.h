@@ -27,6 +27,7 @@
 #include "AppHeaders.h"
 #include "InstanceInfo.h"
 #include "ServiceHandler.h"
+#include <unordered_map>
 
 /************************************************************************
  * Class : CServiceMaster

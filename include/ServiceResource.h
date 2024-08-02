@@ -152,7 +152,7 @@ class CServiceResource
 		char 	mcfn_getStatus()                            	{ return mesc_Status;                  	}
 		int 	mcfn_getServiceId()                        	{ return mesi_ServiceId;               	}
 		int 	mcfn_getTotalChannel()                        	{ return mesi_TotalChannel;             }
-		int     mcfn_getBusyCount(const int& siL_Count)         { return mesi_BusyCount;	        }
+		int     mcfn_getBusyCount()			         { return mesi_BusyCount;	        }
 		void 	mcfn_incrementBusyCount()			{ mesi_BusyCount++;			}
 		void 	mcfn_decrementBusyCount()			{ mesi_BusyCount--;			}
 		void 	mcfn_resetBusyCount()				{ mesi_BusyCount = 0;			}

@@ -53,6 +53,10 @@ using namespace _EventLog;
  * Configuration parameter with data value as char
  */
 #define CFGLONG 4
+/**
+ * Configuration parameter with data value as float
+ */
+#define CFGFLOAT 5
 
 
 
@@ -138,6 +142,10 @@ class CAppConfigParams : public IConfigParams
                 //Varible to store primary password
                 char pmesc_PrimaryPassword[50];
 
+		//
+		int mesi_ForceEnquiryPercentageLimit;
+		
+
 
 
 	protected:
@@ -213,6 +221,7 @@ class CAppConfigParams : public IConfigParams
 		int 	mcfn_getPeriodicEnquiryType()			{ return mesi_PeriodicEnquiryType;			}
 		int 	mcfn_getConsumerHandlerCount()			{ return mesi_ConsumerHandlerCount;			}
 		int 	mcfn_getResourceExhaustLimit()			{ return mesi_ResourceExhaustLimit;			}
+		int	mcfn_getForceEnquiryPercentageLimit()		{ return mesi_ForceEnquiryPercentageLimit;		}
 
 		//Redis Cache:
 		//returns ClusterMode

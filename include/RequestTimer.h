@@ -100,6 +100,7 @@ void CRequestTimer::mcfn_stopRequestTimer()
 {
 	meC_RequestTimerTicks.mcfn_stopTimer();
 	pmeC_TimerManager->mcfn_unregister(&meC_RequestTimerTicks);
+	meb_IsRequestTimerStarted       = false;
 }
 
 

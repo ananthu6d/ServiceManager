@@ -188,63 +188,13 @@ void CServiceHandler::mcfn_onNotifyEvent(CGenericEvent& CL_GenericEvent,long slL
 				mefn_processResetBusyCount(pSL_EventInfo->pmcsc_SignalingIpPort);
 				break;
 			}
-
-
-	}
-	/*
-	   case AddNewResource://dispatched from RegisterHandler
-	   {
-	   member_lock();
-	   create and insert new resource with dummy value
-	   }
-	case ResetResourceCount://dispatched from RegisterHandler
-	{
-		member_lock();
-		reset count to dummy value
-	}
-	case BlockService://dispatched from Monitor
-	{
-		member_lock();
-		state = blocked;
-	}
-
-	case UnblockService://dispatched from Monitor
-	{
-		member_lock();
-		state = Active;
-		recalculate resource for entire service
-	}
-
-	case calculateResource://dispatched from RegisterHandler
-CL_ServiceKey	{
-		member_lock();
-		recalculate resource for entire service
-	}
-
-	case purge resource:
-	{
-		member_lock();
-
-		pCL_ServiceResource = meC_ResourceMap.find(instance_id);
-
-		if(meC_CurrentItr == meC_ResourceMap.find(instance_id))
-			++meC_CurrentItr;
-
-		meC_ResourceMap.erase(instance_id);
-		member_unlock();
-
-		pCL_ServiceResource->mcfn_deleteFromCache();
-		delete from SERVICE_INSTANCE_MAPPING where status = 'D' and INSTANCE_ID == instance_id AND SERVICE_ID == serviceId;
-		delete pCL_ServiceResource;
+		case EVT_VALIDATE_BUSYCOUNT:
+			{
+				mefn_processValidateBusyCount(pSL_EventInfo->pmcsc_SignalingIpPort,pSL_EventInfo->mcsi_TotalBusyCount);
+				break;
+			}
 
 	}
-	case EVT_ADD_RESOURCE:		//add a resource 
-	case EVT_UPDATE_RESOURCE:	//update resource
-	case EVT_DEACT_RESOURCE:	//deactivate a resource
-	case EVT_ACT_RESOURCE:		//activate a resource
-
-*/
-
 	__return__();
 }
 
@@ -336,7 +286,7 @@ void CServiceHandler::mefn_processLoadResource(CServiceResource* pCL_ServiceReso
  * Returns   : None
  ************************************************************************/
 
-void CServiceHandler::mefn_processRemoveResource(string CL_SignalingIpPort)
+void CServiceHandler::mefn_processRemoveResource(const string& CL_SignalingIpPort)
 {
 	__entryFunction__;
 	lock_guard<mutex> CL_Lock(meC_ResourceMutex);
@@ -373,7 +323,7 @@ void CServiceHandler::mefn_processRemoveResource(string CL_SignalingIpPort)
  * Returns   : None
  ************************************************************************/
 
-void CServiceHandler::mefn_processActivateService(string CL_SignalingIpPort)
+void CServiceHandler::mefn_processActivateService(const string& CL_SignalingIpPort)
 {
 	__entryFunction__;
 	lock_guard<mutex> CL_Lock(meC_ResourceMutex);
@@ -406,7 +356,7 @@ void CServiceHandler::mefn_processActivateService(string CL_SignalingIpPort)
  * Returns   : None
  ************************************************************************/
 
-void CServiceHandler::mefn_processDeactivateService(string CL_SignalingIpPort)
+void CServiceHandler::mefn_processDeactivateService(const string& CL_SignalingIpPort)
 {
 	__entryFunction__;
 	lock_guard<mutex> CL_Lock(meC_ResourceMutex);
@@ -480,7 +430,7 @@ bool CServiceHandler::mcfn_fetchResource(char* pscL_SignalingIp,long& slL_Signal
 	__return__(false);
 
 }
-bool CServiceHandler::mcfn_releaseResource(string CL_SignalingIpPort,int& siL_ErrorCode)
+bool CServiceHandler::mcfn_releaseResource(const string& CL_SignalingIpPort,int& siL_ErrorCode)
 {
 	__entryFunction__;
         lock_guard<mutex> CL_Lock(meC_ResourceMutex);
@@ -510,7 +460,7 @@ bool CServiceHandler::mcfn_releaseResource(string CL_SignalingIpPort,int& siL_Er
 	__return__(false);
 }
 
-void CServiceHandler::mefn_processResetBusyCount(string CL_SignalingIpPort)
+void CServiceHandler::mefn_processResetBusyCount(const string& CL_SignalingIpPort)
 {
 
         lock_guard<mutex> CL_Lock(meC_ResourceMutex);
@@ -532,7 +482,7 @@ void CServiceHandler::mefn_updateTotalChannelCount()
 	{
 		mesi_LicenseCap = mef_LicenseCapPercentage * CInstanceRegistry::mcfn_getInstance()->mcfn_getOBDTotalChannelCount(meC_ServiceType+"_"+to_string(mesi_ServiceId));
 	}
-	EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "mefn_updateTotalChannelCount", "Success", this,"", "LicenseCap:%d",mesi_LicenseCap);
+	EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "updateTotalChannelCount", "Success", this,"", "LicenseCap:%d",mesi_LicenseCap);
 
 }
 
@@ -546,5 +496,21 @@ bool CServiceHandler::mcfn_setResourceBusyCount(const string& CL_SignalingIpPort
 		return true;	
         }
 	return false;
+
+}
+
+void CServiceHandler::mefn_processValidateBusyCount(const string& CL_SignalingIpPort,const int& siL_BuysCount)
+{
+	lock_guard<mutex> CL_Lock(meC_ResourceMutex);
+	auto lL_Itr = meC_ResourceMap.find(CL_SignalingIpPort);
+	if(lL_Itr != meC_ResourceMap.end())
+	{
+		if(lL_Itr->second->mcfn_getBusyCount() != siL_BuysCount)
+		{
+			lL_Itr->second->mcfn_setBusyCount(siL_BuysCount);
+			EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "processValidateBusyCount", "Success", this,"", "Updated BusyCount:%d SignalingIpPort:%s",siL_BuysCount,CL_SignalingIpPort.c_str());
+		}
+
+	}
 
 }

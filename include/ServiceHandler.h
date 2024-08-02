@@ -78,14 +78,15 @@ class CServiceHandler : public IEventListener
 		void 	mefn_processAddResource(CServiceResource*);
 		void 	mefn_processLoadResource(CServiceResource*);
 
-		void 	mefn_processRemoveResource(string);
+		void 	mefn_processRemoveResource(const string&);
 
-		void 	mefn_processDeactivateService(string);
-		void 	mefn_processActivateService(string);
+		void 	mefn_processDeactivateService(const string&);
+		void 	mefn_processActivateService(const string&);
 		
-		void 	mefn_processResetBusyCount(string);
+		void 	mefn_processResetBusyCount(const string&);
 
 		void 	mefn_updateTotalChannelCount();
+		void    mefn_processValidateBusyCount(const string&,const int&);
 
 
 	protected:
@@ -138,7 +139,7 @@ class CServiceHandler : public IEventListener
 		float 	mcfn_getLicenseCapPercentage() 			{ return mef_LicenseCapPercentage;	}
 
 		bool 	mcfn_fetchResource(char* pscL_SignalingIp,long& slL_SignalingPort,int& siL_InstanceId,int& siL_ErrorCode);
-		bool 	mcfn_releaseResource(string CL_SignalingIpPort,int& siL_ErrorCode);
+		bool 	mcfn_releaseResource(const string& CL_SignalingIpPort,int& siL_ErrorCode);
 
 		bool 	mcfn_setResourceBusyCount(const string&,const int&);
 };

@@ -432,7 +432,7 @@ void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int s
  * Returns   : None
  ************************************************************************/
 
-void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int siL_EventType,char* pscL_SignalingIp,long slL_SignalingPort)
+void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int siL_EventType,char* pscL_SignalingIp,long slL_SignalingPort,int siL_Count = DEFAULT_COUNT)
 {
 
 	__entryFunction__;
@@ -444,6 +444,7 @@ void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int s
 
 		SEventInfo SL_EventInfo;
 		SL_EventInfo.mcsi_EventType 	  = siL_EventType;
+		SL_EventInfo.mcsi_TotalBusyCount  = siL_Count;
 		
 		sprintf(SL_EventInfo.pmcsc_SignalingIpPort,"%s:%ld",pscL_SignalingIp,slL_SignalingPort);
 
@@ -480,6 +481,53 @@ void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int s
  * Returns   : Nil                                                       *
  *************************************************************************/
 
+/************************************************************************
+ * Class     : CUDPEventMonitor
+ * Method    : mcfn_dispatchEvent
+ * Purpose   : int siL_EventType,long slL_EventInfo
+ * Arguments : None
+ * Returns   : None
+ ************************************************************************/
+
+void CUDPEventMonitor::mcfn_dispatchEvent(int siL_EventType,long slL_EventInfo)
+{
+
+	__entryFunction__;
+	try
+	{
+		EVENTOBJECT SL_EventObject;
+		CDispatchManager *pCL_DispatchManager = CDispatchManager::mcfn_getInstance();
+		CResourceManager *pCL_ResourceManager = CResourceManager::mcfn_getInstance();
+
+		SL_EventObject.pmcI_EventListener = (IEventListener*)pCG_RegistryEventHandler;
+
+		SEventInfo SL_EventInfo;
+		SL_EventInfo.mcsi_EventType     = siL_EventType;
+		SL_EventInfo.mcsl_EventInfo     = slL_EventInfo;
+
+		while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL))== NULL)
+		{
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "dispatchError", this,"", "EventOBject outtage");
+			usleep(POOLOUTAGEDUR);
+		}
+
+		SL_EventObject.pmcC_EventInfo->mcfn_setEventObject(&SL_EventInfo, sizeof(SL_EventInfo)+1);
+
+		EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "UDPEventMonitor", "dispatch", this,"", "EventListener : %p",SL_EventObject.pmcI_EventListener);
+		pCL_DispatchManager->mcfn_insertEventObject(SL_EventObject); 
+	}
+	catch(CException e)
+        {
+                EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "Exception", this, "", "%s", e.mcfn_getErrorMessage());
+        }
+        catch(...)
+        {
+                EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "Exception", this, "", "Unknown Exception");
+
+        }
+        __return__();
+
+}
 void CUDPEventMonitor::mcfn_printObject()
 {
 

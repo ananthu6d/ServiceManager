@@ -119,13 +119,14 @@ class CUDPEventMonitor : public IEventMonitor , public CRunnable
 		void 	mcfn_dispatchEvent();
 
 		void 	mcfn_dispatchEvent(IEventListener*,int,int,CInstanceInfo*);
+		void    mcfn_dispatchEvent(int,long);
 
 		//void mcfn_dispatchEvent(IEventListener*,int,CServiceResource*);
 		//
 		void 	mcfn_dispatchEvent(IEventListener*,int,long);
 
 
-		 void 	mcfn_dispatchEvent(IEventListener*,int,char*,long);
+		 void 	mcfn_dispatchEvent(IEventListener*,int,char*,long,int = DEFAULT_COUNT);
 
 		/**
 		 * Implementation of Base pure virtual to print the Object Contents

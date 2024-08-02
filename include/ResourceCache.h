@@ -27,11 +27,15 @@
 #include <shared_mutex>
 #include <mutex>
 #include "RedisController.h"
+#include "Runnable.h"
+#include "AppUserTypes.h"
+#include "STSMsgQue.h"
+#include <unordered_map>
 using namespace std;
 /**
  * This resourceCache
  */
-class CResourceCache 
+class CResourceCache : public CRunnable 
 {
 	private:
 		/**
@@ -43,6 +47,8 @@ class CResourceCache
 		IRedisInterface* pmeI_RedisCacheInterface;
 
 		mutex meC_ResourceCacheLock;
+
+		CMsgQue<SResourceCacheEvent> meC_ResourceCacheQueue;
 	protected:
                 /**
                  * Protected Variables
@@ -57,6 +63,10 @@ class CResourceCache
 		 /**
                  * Private Functions
                  */
+		bool 	mefn_processincrementBusyCount(const SResourceCacheEvent& SL_ResourceCacheEvent);
+		bool	mefn_processdecrementBusyCount(const SResourceCacheEvent& SL_ResourceCacheEvent);
+		bool 	mefn_processresetBusyCount(const SResourceCacheEvent& SL_ResourceCacheEvent);
+
 
 		/**
 		 * Constructor
@@ -84,6 +94,7 @@ class CResourceCache
 		 * It is the thread function
 		 */
 
+		void mcfn_run();
 		//Method to create Singleton Reference Object
 		static CResourceCache* mcfn_getInstance()
 		{
@@ -103,7 +114,8 @@ class CResourceCache
 
 		bool	mcfn_removeFromResourceCache(const string& CL_ServiceKey,const string& CL_InstanceKey);
 
-		bool 	mcfn_getHashMapFromResourceCache(const string& CL_ServiceKey,unordered_map<string,string>&);
+		bool 	mcfn_getHashMapFromResourceCache(const string& CL_ServiceKey,std::unordered_map<std::string,std::string>&);
+
 
 }; // end of class ResourceCache
 

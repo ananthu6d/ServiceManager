@@ -82,6 +82,7 @@ class CRegistryEventHandler : public IEventListener
 		bool 	mefn_processSocketReconnect(const SocketReconnectReq&);
 		void 	mefn_processRequestTimeout(CInstanceInfo*);
 		void 	mefn_processEnquiryTimeout(CInstanceInfo*);
+		void    mefn_processForceEnquiry(CInstanceInfo*);
 
 		//Registration
 		bool 	mefn_processRegisterInstance(const ResourceRegistrationReq&);
