@@ -807,7 +807,6 @@ bool CRegistryEventHandler::mefn_processDeRegisterInstance(const ResourceDeRegis
 		pCL_InstanceInfo->pmcC_EnquiryTimer->mcfn_stopEnquiryTimer();
 
 		CInstanceRegistry::mcfn_getInstance()->mcfn_deActivateInstanceInfo(CL_ResourceDeRegistrationReq.signalingip()+":"+to_string(CL_ResourceDeRegistrationReq.signalingport()));
-		//pCL_InstanceInfo->mcfn_deactivateInstance();
 		while(1)
 		{
 		

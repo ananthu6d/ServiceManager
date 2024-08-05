@@ -294,8 +294,14 @@ void CServiceHandler::mefn_processRemoveResource(const string& CL_SignalingIpPor
 	if(lL_Itr!=meC_ResourceMap.end())
 	{
 
-		//lL_Itr->second->mcfn_deActivateResource();
-		//lL_Itr->second->mcfn_resetAllotedResourceCap();
+		int siL_BusyCount = 0x00;
+		if(!CResourceCache::mcfn_getInstance()->mcfn_fetchBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),CL_SignalingIpPort,siL_BusyCount))
+                {
+			__return__();	
+		}
+
+		mesi_TotalServiceBusyCount -= siL_BusyCount;
+		lL_Itr->second->mcfn_deActivateResource();
 		while(1)
 		{
 			CDeRegisterServiceResourceSet CL_DeRegisterServiceResourceSet;
@@ -305,8 +311,8 @@ void CServiceHandler::mefn_processRemoveResource(const string& CL_SignalingIpPor
 			}
 			usleep(DBFAILURESLEEPDUR);
 		}
-		//mefn_calculateResourceCount(CL_SignalingIpPort);
 		mefn_updateTotalChannelCount();
+		
 		__return__();
 
 	}
@@ -364,12 +370,18 @@ void CServiceHandler::mefn_processDeactivateService(const string& CL_SignalingIp
 	auto lL_Itr = meC_ResourceMap.find(CL_SignalingIpPort);
 	if(lL_Itr!=meC_ResourceMap.end())
 	{
-		//lL_Itr->second->mcfn_deActivateResource();
-		//lL_Itr->second->mcfn_resetAllotedResourceCap();
+		int siL_BusyCount = 0x00;
+                if(!CResourceCache::mcfn_getInstance()->mcfn_fetchBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),CL_SignalingIpPort,siL_BusyCount))
+                {
+                        __return__();
+                }
+
+                mesi_TotalServiceBusyCount -= siL_BusyCount;
+                lL_Itr->second->mcfn_deActivateResource();
+
 	}
 
 	mefn_updateTotalChannelCount();
-	//mefn_calculateResourceCount(CL_SignalingIpPort);
 	__return__();
 }
 
@@ -508,6 +520,7 @@ void CServiceHandler::mefn_processValidateBusyCount(const string& CL_SignalingIp
 		if(lL_Itr->second->mcfn_getBusyCount() != siL_BuysCount)
 		{
 			lL_Itr->second->mcfn_setBusyCount(siL_BuysCount);
+			//TODO: update totalbusycount
 			EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "processValidateBusyCount", "Success", this,"", "Updated BusyCount:%d SignalingIpPort:%s",siL_BuysCount,CL_SignalingIpPort.c_str());
 		}
 

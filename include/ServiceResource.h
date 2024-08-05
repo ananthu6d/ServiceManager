@@ -102,14 +102,17 @@ class CServiceResource
 			return CResourceCache::mcfn_getInstance()->mcfn_insertBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 		}
 
-		void  	mcfn_deActivateResource()
+		bool  	mcfn_deActivateResource()
 		{
 			if(mesc_Status == 'A')
 				mesc_Status = 'D';
+			mesi_BusyCount = 0x00;
+			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 
 		}
 		bool 	mcfn_activateResource()
 		{
+			mesi_BusyCount = 0x00;
 			if(mesc_Status == 'D')
 			{
 				mesc_Status	= 'A';

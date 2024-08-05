@@ -155,7 +155,10 @@ class CInstanceInfo
 	inline 
 void CInstanceInfo::mcfn_deactivateInstance()
 {
-	mesc_Status='D';
+	mesc_Status		= 'D';
+	mesi_IBDBusyCount	= 0x00;
+	mesi_OBDBusyCount	= 0x00;
+
 	for( auto& lL_Itr : meC_ServiceInfoMap)
 	{
 		lL_Itr.second->mcfn_deActivateService();
@@ -165,7 +168,9 @@ void CInstanceInfo::mcfn_deactivateInstance()
 	inline
 void CInstanceInfo::mcfn_activateInstance()
 {
-	mesc_Status='A';
+	mesc_Status		= 'A';
+	mesi_IBDBusyCount       = 0x00;
+        mesi_OBDBusyCount       = 0x00;
 }
 	inline 
 bool CInstanceInfo::mcfn_deactivateService(const string& CL_ServiceType_Id)
