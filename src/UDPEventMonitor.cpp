@@ -25,11 +25,8 @@
 #include "AppExterns.h"
 #include "UDPEventMonitor.h"
 #include "AppHeaders.h"
-#include "RegistryEventHandler.h"
+#include "InstanceHandler.h"
 #include "ConsumerHandler.h"
-
-extern CRegistryEventHandler* pCG_RegistryEventHandler;
-
 using namespace _6d;
 /**
  * Initializing the Singleton Reference Object to NULL
@@ -83,16 +80,33 @@ CUDPEventMonitor::~CUDPEventMonitor()
         //Get the DispatchManager
        	CDispatchManager *pCL_DispatchManager = CDispatchManager::mcfn_getInstance();
 
-        if(pCL_DispatchManager)
-        {
-                /**
-                * If DispatchManager is available, unregister the Event Monitor
-                * @param1 UUCID of CCEventMonitor
-                */
+	if(pCL_DispatchManager)
+	{
+		/**
+		 * If DispatchManager is available, unregister the Event Monitor
+		 * @param1 UUCID of CCEventMonitor
+		 */
 
 		//               pCL_DispatchManager->mcfn_removeEventMonitor(5);
 	}
 
+	for(auto& lL_Itr : meC_ConsumerHandlerMap)
+	{
+		if(lL_Itr.second)
+		{
+			delete lL_Itr.second;
+			lL_Itr.second = nullptr;
+		}
+	}
+
+	for(auto& lL_Itr : meC_InstanceHandlerMap)
+	{
+		if(lL_Itr.second)
+		{
+			delete lL_Itr.second;
+			lL_Itr.second = nullptr;
+		}
+	}
 	mcfn_close();
 	
 	//mcfn_join();
@@ -191,21 +205,17 @@ void CUDPEventMonitor::mcfn_initializeForEvents()
 } // end of mcfn_initializeForEvents
 
 /************************************************************************
- * Class     : CUDPEventMonitor                                         *
- * Method    : mcfn_dispatchEvent                                        *
- * Purpose   : Method to retrieve the events                             *
- * Arguments : Nil                                                       *
- * Returns   : true if event present else false                          *
+ * Class     : CUDPEventMonitor                                         
+ * Method    : mcfn_dispatchEvent                                        
+ * Purpose   : Method to retrieve the events                             
+ * Arguments : Nil                                                       
+ * Returns   : true if event present else false                          
  *************************************************************************/
 
 void CUDPEventMonitor::mcfn_dispatchEvent()
 {
 
 	__entryFunction__;
-	EVENTOBJECT SL_EventObject;
-	CDispatchManager *pCL_DispatchManager = CDispatchManager::mcfn_getInstance();
-	CResourceManager *pCL_ResourceManager = CResourceManager::mcfn_getInstance();
-
 	switch(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_CmdId)
 	{
 		case CMD_REGISTER_INSTANCE_REQ:
@@ -214,176 +224,192 @@ void CUDPEventMonitor::mcfn_dispatchEvent()
 		case CMD_ENQUIRY_RESP:
 		case CMD_SOCKET_RECONNECT_REQ:
 			{
-				try
-				{
-					SL_EventObject.pmcI_EventListener = (IEventListener*)pCG_RegistryEventHandler;
-
-					SEventInfo SL_EventInfo;
-					strcpy(SL_EventInfo.pmcsc_ClientIp,pmesc_ClientIp);
-					SL_EventInfo.mcsl_ClientPort	= mesl_ClientPort;
-					SL_EventInfo.mcsi_EventType	= EVT_NETWORK;
-					SL_EventInfo.mcsl_EventInfo	= (long)pmeS_ServiceManagerEvent;
-
-					while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL)) == NULL)
-					{
-						EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "dispatchError", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "EventOBject outtage");
-						usleep(POOLOUTAGEDUR);
-					}
-
-					SL_EventObject.pmcC_EventInfo->mcfn_setEventObject(&SL_EventInfo, sizeof(SL_EventInfo)+1);
-
-					EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "UDPEventMonitor", "dispatch", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "EventListener : %p",SL_EventObject.pmcI_EventListener);
-					pCL_DispatchManager->mcfn_insertEventObject(SL_EventObject);
-
-				}
-				catch(CException CL_Ex)
-				{
-					EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Error Code:%d, ErrorDesc:%s",CL_Ex.mcfn_getErrorCode(),CL_Ex.mcfn_getErrorMessage());
-				}
-				catch(...)
-				{
-					EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Unknown Exception");
-				}
+				mefn_processDispatchInstance(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_CmdId);
+				break;
 			}
-			break;
 		case CMD_REGISTER_CONSUMER_REQ:
-			{
-				try
-                                {
-					SEventInfo SL_EventInfo;
-                                        strcpy(SL_EventInfo.pmcsc_ClientIp,pmesc_ClientIp);
-                                        SL_EventInfo.mcsl_ClientPort    = mesl_ClientPort;
-                                        SL_EventInfo.mcsi_EventType     = EVT_NETWORK;
-                                        SL_EventInfo.mcsl_EventInfo     = (long)pmeS_ServiceManagerEvent;
-
-					if(meC_ConsumerHandlerMap.find(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey) != meC_ConsumerHandlerMap.end())
-					{
-						map<string,string> CL_MetaDataMap;
-						CL_MetaDataMap["instanceid"] = to_string(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey);
-						mcfn_sendResponse(CMD_REGISTER_CONSUMER_RESP,ER_CONSUMER_ALREADY_REGISTERED,"Consumer Already Registered!",CL_MetaDataMap);
-						__return__();
-					}
-
-					CConsumerHandler* pCL_ConsumerHandler	= new CConsumerHandler();
-					pCL_ConsumerHandler->mcfn_setSynKey(slG_SynKey);
-                			slG_SynKey++;
-
-					SL_EventObject.pmcI_EventListener	= pCL_ConsumerHandler;
-
-					meC_ConsumerHandlerMap.insert({pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey,pCL_ConsumerHandler});
-					while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL))== NULL)
-                                        {
-                                                EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "dispatchError", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "EventOBject outage");
-                                                usleep(POOLOUTAGEDUR);
-                                        }
-
-                                        SL_EventObject.pmcC_EventInfo->mcfn_setEventObject(&SL_EventInfo, sizeof(SL_EventInfo)+1);
-
-                                        EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "UDPEventMonitor", "dispatch", this, "", "EventListener : %p",SL_EventObject.pmcI_EventListener);
-                                        pCL_DispatchManager->mcfn_insertEventObject(SL_EventObject);
-				
-				}
-				catch(CException CL_Ex)
-                                {
-                                        EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Error Code:%d, ErrorDesc:%s",CL_Ex.mcfn_getErrorCode(),CL_Ex.mcfn_getErrorMessage());
-					if(SL_EventObject.pmcI_EventListener)
-                                        {
-						delete SL_EventObject.pmcI_EventListener;
-						SL_EventObject.pmcI_EventListener = nullptr;
-                                        }
-
-                                }
-                                catch(...)
-                                {
-                                        EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Unknown Exception");
-					if(SL_EventObject.pmcI_EventListener)
-                                        {
-                                                delete SL_EventObject.pmcI_EventListener;
-                                                SL_EventObject.pmcI_EventListener = nullptr;
-                                        }
-
-                                }
-
-			}
 		case CMD_DEREGISTER_CONSUMER_REQ:
 		case CMD_FETCH_RESOURCE_REQ:
 		case CMD_RELEASE_RESOURCE_REQ:
 			{
-				try
-				{
-
-					SEventInfo SL_EventInfo;
-					strcpy(SL_EventInfo.pmcsc_ClientIp,pmesc_ClientIp);
-					SL_EventInfo.mcsl_ClientPort	= mesl_ClientPort;
-					SL_EventInfo.mcsi_EventType	= EVT_NETWORK;
-					SL_EventInfo.mcsl_EventInfo	= (long)pmeS_ServiceManagerEvent;
-
-					auto lL_Itr = meC_ConsumerHandlerMap.find(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey);
-					if(lL_Itr == meC_ConsumerHandlerMap.end())
-                                        {
-                                                map<string,string> CL_MetaDataMap;
-                                                CL_MetaDataMap["instanceid"] = to_string(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey);
-                                                mcfn_sendResponse(CMD_REGISTER_CONSUMER_RESP,ER_CONSUMER_ALREADY_REGISTERED,"Consumer Already Registered!",CL_MetaDataMap);
-						__return__();
-                                        }
-					SL_EventObject.pmcI_EventListener = lL_Itr->second;
-
-
-					/*
-
-					while((SL_EventObject.pmcI_EventListener = (IEventListener*)pCL_ResourceManager->mcfn_getObjectFromPool(CONSUMERHANDLERPOOL)) == NULL)
-					{
-						EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "dispatchError", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "ConsumerHandler outage");
-						usleep(POOLOUTAGEDUR);
-					}
-
-					pCL_ResourceManager->mcfn_addObject2Pool(CONSUMERHANDLERPOOL, SL_EventObject.pmcI_EventListener);
-
-					*/
-					while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL)) == NULL)
-					{
-						EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "dispatchError", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "EventOBject outage");
-						usleep(POOLOUTAGEDUR);
-					}
-
-					SL_EventObject.pmcC_EventInfo->mcfn_setEventObject(&SL_EventInfo, sizeof(SL_EventInfo)+1);
-
-					EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "UDPEventMonitor", "dispatch", this, "", "EventListener : %p",SL_EventObject.pmcI_EventListener);
-					pCL_DispatchManager->mcfn_insertEventObject(SL_EventObject);
-				}
-				catch(CException CL_Ex)
-				{
-					EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Error Code:%d, ErrorDesc:%s",CL_Ex.mcfn_getErrorCode(),CL_Ex.mcfn_getErrorMessage());
-					if(SL_EventObject.pmcI_EventListener)
-					{
-						pCL_ResourceManager->mcfn_addObject2Pool(CONSUMERHANDLERPOOL,SL_EventObject.pmcI_EventListener);
-					}
-				}
-				catch(...)
-				{
-					EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Unknown Exception");
-					if(SL_EventObject.pmcI_EventListener)
-					{
-						pCL_ResourceManager->mcfn_addObject2Pool(CONSUMERHANDLERPOOL,SL_EventObject.pmcI_EventListener);
-					}
-				}
-
+				mefn_processDispatchConsumer(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_CmdId);
+				break;
 			}
-			break;
 		default:
 			{
-				EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Failure",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Invalid CmdId:%d",pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_CmdId);
+				EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"dispatchEvent","Failure",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Invalid CmdId:%d",pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_CmdId);
 
 				mcfn_sendResponse(CMD_GENERIC_ERROR_RESP,ER_INVALID_CMDID,"Invalide CmdId");
 
 			}
-
-
 	}
-
 
 }// end of mcfn_dispatchEvent
 
+void CUDPEventMonitor::mefn_processDispatchInstance(int siL_CmdId)
+{
+	EVENTOBJECT SL_EventObject;
+        CDispatchManager *pCL_DispatchManager = CDispatchManager::mcfn_getInstance();
+        CResourceManager *pCL_ResourceManager = CResourceManager::mcfn_getInstance();
+	CInstanceHandler* pCL_InstanceHandler = nullptr;
+	try
+	{
+		SEventInfo SL_EventInfo;
+		strcpy(SL_EventInfo.pmcsc_ClientIp,pmesc_ClientIp);
+		SL_EventInfo.mcsl_ClientPort	= mesl_ClientPort;
+		SL_EventInfo.mcsi_EventType	= EVT_NETWORK;
+		SL_EventInfo.mcsl_EventInfo	= (long)pmeS_ServiceManagerEvent;
+
+		auto lL_Itr = meC_InstanceHandlerMap.find(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey);
+
+		switch(siL_CmdId)
+		{
+			case CMD_REGISTER_INSTANCE_REQ:
+				{
+					if(lL_Itr == meC_InstanceHandlerMap.end())
+					{
+						pCL_InstanceHandler   = new CInstanceHandler();
+						pCL_InstanceHandler->mcfn_setSynKey(slG_SynKey);
+						slG_SynKey++;
+						SL_EventObject.pmcI_EventListener = pCL_InstanceHandler;
+						meC_InstanceHandlerMap.insert({pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey,pCL_InstanceHandler});
+						break;
+					}
+					SL_EventObject.pmcI_EventListener = lL_Itr->second;
+				}
+				break;
+			case CMD_DEREGISTER_INSTANCE_REQ:
+			case CMD_DEREGISTER_SERVICE_RESOURCE_REQ:
+			case CMD_ENQUIRY_RESP:
+				{
+					if(lL_Itr == meC_InstanceHandlerMap.end())
+					{
+						mcfn_sendResponse(CMD_GENERIC_ERROR_RESP,ER_NO_INSTANCE_REGISTERED,"No Instance Registered!");
+                                                __return__();		
+					}
+					SL_EventObject.pmcI_EventListener = lL_Itr->second;
+				}
+				break;
+
+		}
+		
+		while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL)) == NULL)
+		{
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processDispatchInstance", "dispatchError", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "EventOBject outage");
+			usleep(POOLOUTAGEDUR);
+		}
+
+		SL_EventObject.pmcC_EventInfo->mcfn_setEventObject(&SL_EventInfo, sizeof(SL_EventInfo)+1);
+
+		EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "processDispatchInstance", "dispatch", this, "", "EventListener : %p",SL_EventObject.pmcI_EventListener);
+		pCL_DispatchManager->mcfn_insertEventObject(SL_EventObject);
+	}
+	catch(CException CL_Ex)
+	{
+		EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"processDispatchInstance","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Error Code:%d, ErrorDesc:%s",CL_Ex.mcfn_getErrorCode(),CL_Ex.mcfn_getErrorMessage());
+		if(pCL_InstanceHandler)
+		{
+			delete pCL_InstanceHandler;
+			pCL_InstanceHandler = nullptr;
+		}
+		
+	}
+	catch(...)
+	{
+		EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Unknown Exception");
+		if(pCL_InstanceHandler)
+                {
+                        delete pCL_InstanceHandler;
+                        pCL_InstanceHandler = nullptr;
+                }
+	}
+	__return__();
+
+}
+void CUDPEventMonitor::mefn_processDispatchConsumer(int siL_CmdId)
+{
+	__entryFunction__;
+
+	EVENTOBJECT SL_EventObject;
+        CDispatchManager *pCL_DispatchManager = CDispatchManager::mcfn_getInstance();
+        CResourceManager *pCL_ResourceManager = CResourceManager::mcfn_getInstance();
+	CConsumerHandler* pCL_ConsumerHandler = nullptr;
+	try
+	{
+		SEventInfo SL_EventInfo;
+		strcpy(SL_EventInfo.pmcsc_ClientIp,pmesc_ClientIp);
+		SL_EventInfo.mcsl_ClientPort	= mesl_ClientPort;
+		SL_EventInfo.mcsi_EventType	= EVT_NETWORK;
+		SL_EventInfo.mcsl_EventInfo	= (long)pmeS_ServiceManagerEvent;
+
+		auto lL_Itr = meC_ConsumerHandlerMap.find(pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey);
+
+		switch(siL_CmdId)
+		{
+			case CMD_REGISTER_CONSUMER_REQ:
+				{
+					if(lL_Itr != meC_ConsumerHandlerMap.end())
+					{
+						mcfn_sendResponse(CMD_GENERIC_ERROR_RESP,ER_CONSUMER_ALREADY_REGISTERED,"Consumer Already Registered!");
+						__return__();
+					}
+
+					pCL_ConsumerHandler   = new CConsumerHandler();
+					pCL_ConsumerHandler->mcfn_setSynKey(slG_SynKey);
+					slG_SynKey++;
+					SL_EventObject.pmcI_EventListener = pCL_ConsumerHandler;
+					meC_ConsumerHandlerMap.insert({pmeS_ServiceManagerEvent->mcS_EventHeader.mcsi_SyncKey,pCL_ConsumerHandler});
+
+				}
+				break;
+			case CMD_DEREGISTER_CONSUMER_REQ:
+			case CMD_FETCH_RESOURCE_REQ:
+			case CMD_RELEASE_RESOURCE_REQ:
+				{
+					if(lL_Itr == meC_ConsumerHandlerMap.end())
+					{
+						mcfn_sendResponse(CMD_GENERIC_ERROR_RESP,ER_NO_CONSUMER_REGISTERED,"No Consumer Registered!");
+                                                __return__();		
+					}
+					SL_EventObject.pmcI_EventListener = lL_Itr->second;
+				}
+				break;
+
+		}
+		
+		while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL)) == NULL)
+		{
+			EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "processDispatchConsumer", "dispatchError", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "EventOBject outage");
+			usleep(POOLOUTAGEDUR);
+		}
+
+		SL_EventObject.pmcC_EventInfo->mcfn_setEventObject(&SL_EventInfo, sizeof(SL_EventInfo)+1);
+
+		EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "processDispatchConsumer", "dispatch", this, "", "EventListener : %p",SL_EventObject.pmcI_EventListener);
+		pCL_DispatchManager->mcfn_insertEventObject(SL_EventObject);
+	}
+	catch(CException CL_Ex)
+	{
+		EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"processDispatchConsumer","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Error Code:%d, ErrorDesc:%s",CL_Ex.mcfn_getErrorCode(),CL_Ex.mcfn_getErrorMessage());
+		if(pCL_ConsumerHandler)
+		{
+			delete pCL_ConsumerHandler;
+			pCL_ConsumerHandler = nullptr;
+		}
+		
+	}
+	catch(...)
+	{
+		EVT_LOG(CG_EventLog,LOG_ERROR,siG_InstanceID,"UDPEventMonitor","Exception",this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId,"Unknown Exception");
+		if(pCL_ConsumerHandler)
+                {
+                        delete pCL_ConsumerHandler;
+                        pCL_ConsumerHandler = nullptr;
+                }
+	}
+	__return__();
+
+}
 /************************************************************************
  * Class     : CUDPEventMonitor
  * Method    : mcfn_dispatchEvent
@@ -392,7 +418,7 @@ void CUDPEventMonitor::mcfn_dispatchEvent()
  * Returns   : None
  ************************************************************************/
 
-void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int siL_CategoryType,int siL_TimerCategory,CInstanceInfo* pCL_InstanceInfo)
+void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int siL_EventType)
 {
 
 	__entryFunction__;
@@ -404,10 +430,7 @@ void CUDPEventMonitor::mcfn_dispatchEvent(IEventListener* pIL_EventHandler,int s
 		CResourceManager *pCL_ResourceManager = CResourceManager::mcfn_getInstance();
 
 		SEventInfo SL_EventInfo;
-		SL_EventInfo.mcsi_EventType		= siL_CategoryType;
-		SL_EventInfo.mcsl_EventInfo		= (long)pCL_InstanceInfo;
-		SL_EventInfo.pmcsc_ClientIp[0]		= 0x00;
-		SL_EventInfo.mcsl_ClientPort    	= 0x00;
+		SL_EventInfo.mcsi_EventType		= siL_EventType;
 		SL_EventObject.pmcI_EventListener	= (IEventListener*)pIL_EventHandler;
 
 		while((SL_EventObject.pmcC_EventInfo = (CGenericEvent*)pCL_ResourceManager->mcfn_getObjectFromPool(EVENTOBJECTPOOL)) == NULL)
@@ -558,7 +581,7 @@ void CUDPEventMonitor::mcfn_dispatchEvent(int siL_EventType,long slL_EventInfo)
 		CDispatchManager *pCL_DispatchManager = CDispatchManager::mcfn_getInstance();
 		CResourceManager *pCL_ResourceManager = CResourceManager::mcfn_getInstance();
 
-		SL_EventObject.pmcI_EventListener = (IEventListener*)pCG_RegistryEventHandler;
+		//SL_EventObject.pmcI_EventListener = (IEventListener*)pCG_InstanceHandler;
 
 		SEventInfo SL_EventInfo;
 		SL_EventInfo.mcsi_EventType     = siL_EventType;
@@ -714,7 +737,7 @@ bool CUDPEventMonitor::mcfn_sendResponse(int siL_RespCmdId,int siL_ErrorCode,cha
 
 				if (!CL_GenericError.SerializePartialToArray(SL_ServiceManagerEvent.pmcsc_ProtoBuffEvent,SL_ServiceManagerEvent.mcS_EventHeader.mcsi_ProtoBuffLength))
 				{
-					EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "Failure", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "Serializing Response Data");
+					EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "sendResponse", "Failure", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "Serializing Response Data");
 					__return__(false);
 				}
 			}
@@ -732,12 +755,13 @@ bool CUDPEventMonitor::mcfn_sendResponse(int siL_RespCmdId,int siL_ErrorCode,cha
 
                                 if (!CL_ResourceConsumerRegistrationResp.SerializePartialToArray(SL_ServiceManagerEvent.pmcsc_ProtoBuffEvent,SL_ServiceManagerEvent.mcS_EventHeader.mcsi_ProtoBuffLength))
                                 {
-                                        EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "UDPEventMonitor", "Failure", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "Serializing Response Data");
+                                        EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "sendResponse", "Failure", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "Serializing Response Data");
                                         __return__(false);
                                 }
 			}
 			break;
 	}
+	EVT_LOG(CG_EventLog, LOG_INFO, siG_InstanceID, "sendResponse", "Success", this,pmeS_ServiceManagerEvent->mcS_EventHeader.pmcsc_TransId, "Response: StatusCode:%d,StatusDesc:%s",siL_ErrorCode,pscL_ErrorDec);
 	__return__(mcfn_sendTo((char*)&SL_ServiceManagerEvent,SL_ServiceManagerEvent.mcS_EventHeader.mcsi_ProtoBuffLength,pmesc_ClientIp,mesl_ClientPort));
 
 }

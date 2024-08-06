@@ -139,7 +139,7 @@ class CServiceResource
 			return CResourceCache::mcfn_getInstance()->mcfn_resetBusyCount(meC_ServiceType+"_"+to_string(mesi_ServiceId),meC_SignalingIP+":"+to_string(mesl_SignalingPort));
 		}
 
-		void 	mcfn_setSignalingIP(char* pscL_IP)      	{ meC_SignalingIP=pscL_IP;	 	}
+		void 	mcfn_setSignalingIP(const string& CL_IP)      	{ meC_SignalingIP=CL_IP;	 	}
 		void 	mcfn_setServiceType(const string& CL_Type)     	{ meC_ServiceType=CL_Type;	 	}
 		void 	mcfn_setSignalingPort(const long& slL_Port)   	{ mesl_SignalingPort = slL_Port;       	}
 		void	mcfn_setInstanceId(const int& siL_Id)          	{ mesi_InstanceId = siL_Id;           	}

@@ -86,18 +86,18 @@ class CRegisterInstanceSet: public CMySQLRecordSet
 			memset(pmesc_RegistrationTime, 	0x00, sizeof(pmesc_RegistrationTime));
 		}
 
-		void mefn_setData(const CInstanceInfo* pCL_InstanceInfo)
+		void mefn_setData(char* pscL_InstanceName,char* pscL_RegistrationTime,char scL_Status,char* pscL_SignalingIp,int siL_TotalResourceCount,int siL_InboundResourceCount,int siL_OutboundResourceCount,int siL_SignalingPort,int siL_InstanceId)
 		{
 
-			strcpy(pmesc_InstanceName, pCL_InstanceInfo->mcfn_getInstanceName());
-			strcpy(pmesc_RegistrationTime, pCL_InstanceInfo->mcfn_getRegistrationTime());
-			strcpy(pmesc_SignalingIp, pCL_InstanceInfo->mcfn_getSignalingIP().c_str());
-			mesi_SignalingPort		= pCL_InstanceInfo->mcfn_getSignalingPort();
-			mesi_TotalResource 		= pCL_InstanceInfo->mcfn_getTotalResourceCount();
-			mesi_TotalInBoundResource 	= pCL_InstanceInfo->mcfn_getInboundResourceCount();
-			mesi_TotalOutBoundResource 	= pCL_InstanceInfo->mcfn_getOutboundResourceCount();
-			mesc_Status			= pCL_InstanceInfo->mcfn_getStatus();
-			mesi_InstanceId 		= pCL_InstanceInfo->mcfn_getInstanceId();
+			strcpy(pmesc_InstanceName,pscL_InstanceName);
+			strcpy(pmesc_RegistrationTime,pscL_RegistrationTime);
+			strcpy(pmesc_SignalingIp,pscL_SignalingIp);
+			mesi_SignalingPort		= siL_SignalingPort;
+			mesi_TotalResource 		= siL_TotalResourceCount;
+			mesi_TotalInBoundResource 	= siL_InboundResourceCount;
+			mesi_TotalOutBoundResource 	= siL_OutboundResourceCount;
+			mesc_Status			= scL_Status;
+			mesi_InstanceId 		= siL_InstanceId;
 
 		}
 
@@ -136,7 +136,7 @@ class CRegisterInstanceSet: public CMySQLRecordSet
 
 		}
 
-		bool 	mcfn_insertIntoInstanceMaster(const CInstanceInfo*);
+		bool 	mcfn_insertIntoInstanceMaster(char*,char*,char,char*,int,int,int,int,int);
 
 		//getErrorCode
 		//int mcfn_getErrorCode(){return mesi_ErrorCode;}

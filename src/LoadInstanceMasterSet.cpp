@@ -128,6 +128,7 @@ bool CLoadInstanceMasterSet:: mcfn_loadInstanceMaster()
 		{
 			siL_InstanceCounter++;
 
+			/*
 			CInstanceInfo* pCL_InstanceInfo = new CInstanceInfo();
 			pCL_InstanceInfo->mcfn_setSignalingIP(pmesc_SignalingIP);
 			pCL_InstanceInfo->mcfn_setInstanceName(pmesc_InstanceName);
@@ -148,6 +149,7 @@ bool CLoadInstanceMasterSet:: mcfn_loadInstanceMaster()
 			}
 
 			mefn_initDataSet();
+			*/
 		}
 
 		EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO,siG_InstanceID, "loadInstanceMaster","Success", this,"", "Instances loaded in Cache:%d, InstancesMaster in DB:%d, Connection:%p",CInstanceRegistry::mcfn_getInstance()->mcfn_getRegistrySize(), siL_InstanceCounter,pmeC_Connection);

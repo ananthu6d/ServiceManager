@@ -53,9 +53,6 @@ class CRequestTimer : public ITimer
 		int 	mesi_TimerDur;
 
 		IEventListener* pmeI_EventListener;
-
-		CInstanceInfo* 	pmeC_InstanceInfo;
-
 		bool meb_IsRequestTimerStarted;
 	public:
 
@@ -64,6 +61,7 @@ class CRequestTimer : public ITimer
 		 */
 
 		CRequestTimer();
+		CRequestTimer(IEventListener*);
 		/**
 		 * Destructort
 		 */
@@ -84,7 +82,7 @@ class CRequestTimer : public ITimer
 
 		void 	mcfn_onTimerExpired(CTimerTicks *){};
 
-		void 	mcfn_startRequestTimer(IEventListener*,CInstanceInfo*,int siL_MilliSec);
+		void 	mcfn_startRequestTimer(int siL_MilliSec);
 
 		void 	mcfn_stopRequestTimer();
 
@@ -93,6 +91,7 @@ class CRequestTimer : public ITimer
 	  	void    mcfn_onNotifyEvent(CGenericEvent &,long);
 
 		bool 	mcfn_IsRequestTimerStarted() {	return meb_IsRequestTimerStarted;	}
+		
 }; // end of the class CRequestTimer
 
 inline

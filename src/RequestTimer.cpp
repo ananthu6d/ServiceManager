@@ -46,6 +46,25 @@ CRequestTimer::CRequestTimer()
  // end of Constructor
 
 /************************************************************************
+* Class     : CCRequestTimer
+* Method    : Constructor
+* Purpose   : Creates Object and initializes its variables
+* Arguments : IEventListener*
+* Returns   : Nil
+*************************************************************************/
+
+CRequestTimer::CRequestTimer(IEventListener* pIL_EventListener)
+{
+        mesi_TimerDur = 0;
+        pmeC_TimerManager = CTimerManager::mcfn_getInstance();
+
+        if(!pmeC_TimerManager)
+                throw CException(100,"Could not get TimerManager");
+
+        pmeI_EventListener = pIL_EventListener;
+}
+
+/************************************************************************
  * Class     : CRequestTimer                                            
  * Method    : Destructor                                                
  * Purpose   : releases its variables and destroys the object            
@@ -101,10 +120,8 @@ void CRequestTimer::mcfn_printObject()
  * Returns   : Nil
  *************************************************************************/
 
-void CRequestTimer::mcfn_startRequestTimer(IEventListener* pIL_EventListener,CInstanceInfo* pCL_InstanceInfo,int siL_MilliSec)
+void CRequestTimer::mcfn_startRequestTimer(int siL_MilliSec)
 {
-	pmeI_EventListener	= pIL_EventListener;
-	pmeC_InstanceInfo	= pCL_InstanceInfo;
 	EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID,"RequestTimer","startRequestTimer",this,"","Timer Duration: %dms",siL_MilliSec);
 	
 	meC_RequestTimerTicks.mcfn_setTimer(0,siL_MilliSec);
@@ -127,7 +144,7 @@ void CRequestTimer::mcfn_onNotifyEvent(CGenericEvent & CL_GenericEvent,long slL_
 	EVT_LOG(CG_EventLog, LOG_INFO,siG_InstanceID,"RequestTimer","TimerEvent",this,"",\
 			"Timer Elapsed: %dms", mesi_TimerDur);
 
-	CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pmeI_EventListener,EVT_REQUEST_TIMEOUT,ENQUIRY_TYPE,pmeC_InstanceInfo);
+	CUDPEventMonitor::mcfn_getInstance()->mcfn_dispatchEvent(pmeI_EventListener,EVT_REQUEST_TIMEOUT);
 		
 	meb_IsRequestTimerStarted = false;	
 }

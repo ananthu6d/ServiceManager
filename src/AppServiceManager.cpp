@@ -22,7 +22,7 @@
 
 #include "AppServiceManager.h"
 #include "AppHeaders.h"
-#include "RegistryEventHandler.h"
+#include "InstanceHandler.h"
 #include "UDPEventMonitor.h"
 #include "DBConnectionPool.h"
 #include "InstanceInfo.h"
@@ -59,8 +59,6 @@ CAppServiceManager CG_AppServiceManager;
  * Application Configuration Object
  */
 CAppConfigParams CG_AppConfigParams;
-
-CRegistryEventHandler* pCG_RegistryEventHandler=nullptr;
 
 long slG_SynKey=INITIAL_SYNKEY;
 
@@ -172,11 +170,6 @@ bool CAppServiceManager::mcfn_initInstance()
 	//4. check external cache for each CServiceResource in all CServiceHandler & insert if required
 	//5. create Consumer handler for configured count.
 	
-	//creating RegistryHandler
-	pCG_RegistryEventHandler = new CRegistryEventHandler();
-	pCG_RegistryEventHandler->mcfn_setHandlerId(slG_SynKey);
-	slG_SynKey++;
-
 	//creating ConsumerHandlers
 	CResourceManager* pCL_ResourceManager = CResourceManager::mcfn_getInstance();
 	for(int siL_Itr = 0; siL_Itr < CG_AppConfigParams.mcfn_getConsumerHandlerCount(); siL_Itr++)
@@ -207,12 +200,7 @@ void CAppServiceManager::mcfn_closeApplication()
 	//delete CInstanceCache::mcfn_getInstance();
 	delete CUDPEventMonitor::mcfn_getInstance();
 	delete CInstanceRegistry::mcfn_getInstance();
-	if(pCG_RegistryEventHandler)
-	{
-		delete pCG_RegistryEventHandler;
-		pCG_RegistryEventHandler=nullptr;
-	}
-	
+
 	CFramework::mcfn_closeApplication();
 
 	__return__();

@@ -93,10 +93,10 @@ void CRegisterInstanceSet::mdfn_bindColumns()
  *  Returns   : success/failure
  ************************************************************************/
 
-bool CRegisterInstanceSet:: mcfn_insertIntoInstanceMaster(const CInstanceInfo* pCL_InstanceInfo)
+bool CRegisterInstanceSet:: mcfn_insertIntoInstanceMaster(char* pscL_InstanceName,char* pscL_RegistrationTime,char scL_Status,char* pscL_SignalingIp,int siL_TotalResourceCount,int siL_InboundResourceCount,int siL_OutboundResourceCount,int siL_SignalingPort,int siL_InstanceId)
 {
 	__entryFunction__;
-	mefn_setData(pCL_InstanceInfo);
+	mefn_setData(pscL_InstanceName,pscL_RegistrationTime,scL_Status,pscL_SignalingIp,siL_TotalResourceCount,siL_InboundResourceCount,siL_OutboundResourceCount,siL_SignalingPort,siL_InstanceId);
 	try
 	{
 

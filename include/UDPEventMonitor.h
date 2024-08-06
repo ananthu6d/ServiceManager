@@ -71,6 +71,7 @@ class CUDPEventMonitor : public IEventMonitor , public CRunnable
 		long 	mesl_ClientPort;
 
 		map<int,IEventListener*> meC_ConsumerHandlerMap;
+		map<int,IEventListener*> meC_InstanceHandlerMap;
 
 	private:
 		/**
@@ -82,6 +83,9 @@ class CUDPEventMonitor : public IEventMonitor , public CRunnable
 		bool 	mefn_create();
 		bool 	mefn_bind();
 		void 	mefn_initalize();
+
+		void 	mefn_processDispatchInstance(int);
+		void 	mefn_processDispatchConsumer(int);
 
 	public:
 		/**
@@ -115,17 +119,12 @@ class CUDPEventMonitor : public IEventMonitor , public CRunnable
 		void 	mcfn_initializeForEvents();
 		bool 	mcfn_receiveEvents();
 
+		//Dispatched
 		void 	mcfn_dispatchEvent();
-
-		void 	mcfn_dispatchEvent(IEventListener*,int,int,CInstanceInfo*);
+		void 	mcfn_dispatchEvent(IEventListener*,int);
 		void    mcfn_dispatchEvent(int,long);
-
-		//void mcfn_dispatchEvent(IEventListener*,int,CServiceResource*);
-		//
 		void 	mcfn_dispatchEvent(IEventListener*,int,long);
-
-
-		 void 	mcfn_dispatchEvent(IEventListener*,int,char*,long,int = DEFAULT_COUNT);
+		void 	mcfn_dispatchEvent(IEventListener*,int,char*,long,int = DEFAULT_COUNT);
 
 		/**
 		 * Implementation of Base pure virtual to print the Object Contents

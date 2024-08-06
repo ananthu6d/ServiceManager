@@ -24,7 +24,7 @@
  */
 
 #include "AppHeaders.h"
-#include "InstanceServiceInfo.h"
+#include "ServiceInfo.h"
 #include "EnquiryTimer.h"
 #include "RequestTimer.h"
 /************************************************************************
@@ -60,7 +60,7 @@ class CInstanceInfo
 		int	mesi_IBDBusyCount; 
 		int	mesi_OBDBusyCount; 
 
-		map	<string,CInstanceServiceInfo*> meC_ServiceInfoMap;
+		map	<string,CServiceInfo*> meC_ServiceInfoMap;
 
 		std::mutex meC_InstanceLock;
 	public:
@@ -116,7 +116,7 @@ class CInstanceInfo
 		char*	mcfn_getClientIP()			{ return pmesc_ClientIP;		}
 		long	mcfn_getClientPort()		 	{ return mesl_ClientPort;		}
 
-		const	map<string,CInstanceServiceInfo*>& mcfn_getServiceMap()	{ return meC_ServiceInfoMap;	}
+		const	map<string,CServiceInfo*>& mcfn_getServiceMap()	{ return meC_ServiceInfoMap;	}
 
 		void 	mcfn_incrementHeartBeatMissCount()			{ mesi_HeartBeatMissCount++;	}
 		void 	mcfn_resetHeartBeatMissCount()				{ mesi_HeartBeatMissCount=0;	}
@@ -202,11 +202,11 @@ bool CInstanceInfo::mcfn_insertService(const string& CL_ServiceId,char* pscL_Ser
 	auto lL_Itr = meC_ServiceInfoMap.find(CL_ServiceType+"_"+CL_ServiceId);
 	if(lL_Itr==meC_ServiceInfoMap.end())
 	{
-		CInstanceServiceInfo* pCL_ServiceInfo = new CInstanceServiceInfo();
+		CServiceInfo* pCL_ServiceInfo = new CServiceInfo();
 		pCL_ServiceInfo->mcfn_setServiceId(CL_ServiceId);
 		pCL_ServiceInfo->mcfn_setServiceName(pscL_ServiceName);
 		pCL_ServiceInfo->mcfn_setServiceType(CL_ServiceType);
-		pCL_ServiceInfo->mcfn_setMaxLimit(siL_MaxLimit);
+		//pCL_ServiceInfo->mcfn_setMaxLimit(siL_MaxLimit);
 		pCL_ServiceInfo->mcfn_setStatus(scL_Status);
 		meC_ServiceInfoMap.insert({CL_ServiceType+"_"+CL_ServiceId,pCL_ServiceInfo});
 		return true;
@@ -235,7 +235,7 @@ bool CInstanceInfo::mcfn_getServiceDetailsFromServiceMap(const string& CL_Servic
 	if(lL_Itr!=meC_ServiceInfoMap.end())
 	{
 		scL_Status=lL_Itr->second->mcfn_getStatus();
-		siL_MaxLimit=lL_Itr->second->mcfn_getMaxLimit();
+		//siL_MaxLimit=lL_Itr->second->mcfn_getMaxLimit();
 		return true;
 	}
 	return false;
@@ -246,7 +246,7 @@ bool CInstanceInfo::mcfn_updateService(const string& CL_ServiceType_Id,const int
 	auto lL_Itr = meC_ServiceInfoMap.find(CL_ServiceType_Id);
         if(lL_Itr!=meC_ServiceInfoMap.end())
         {
-		lL_Itr->second->mcfn_setMaxLimit(siL_MaxLimit);
+		//lL_Itr->second->mcfn_setMaxLimit(siL_MaxLimit);
                 return true;
         }
         return false;	

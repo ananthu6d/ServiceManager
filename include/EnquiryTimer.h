@@ -52,8 +52,6 @@ class CEnquiryTimer : public ITimer
 		int 		mesi_TimerDur;
 
 		IEventListener* pmeI_EventListener;
-
-		CInstanceInfo* 	pmeC_InstanceInfo;
 	public:
 
 		/**
@@ -61,6 +59,7 @@ class CEnquiryTimer : public ITimer
 		 */
 
 		CEnquiryTimer();
+		CEnquiryTimer(IEventListener*);
 		/**
 		 * Destructort
 		 */
@@ -81,7 +80,7 @@ class CEnquiryTimer : public ITimer
 
 		void 	mcfn_onTimerExpired(CTimerTicks *){};
 
-		void 	mcfn_startEnquiryTimer(IEventListener*,CInstanceInfo*,int siL_MilliSec);
+		void 	mcfn_startEnquiryTimer(int siL_MilliSec);
 
 		void 	mcfn_stopEnquiryTimer();
 
