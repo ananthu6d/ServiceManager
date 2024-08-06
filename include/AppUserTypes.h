@@ -64,7 +64,6 @@ typedef struct _SEventInfo
 	}
 }SEventInfo;
 
-
 typedef struct _SServiceManagerEventHeader
 {
 	int mcsi_CmdId;
@@ -86,7 +85,6 @@ typedef struct _SServiceManagerEvent
 		pmcsc_ProtoBuffEvent[0]=0x00;
 	}
 }SServiceManagerEvent;
-
 
 typedef struct _SResourceCacheEvent
 {

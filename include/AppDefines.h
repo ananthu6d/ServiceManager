@@ -95,6 +95,7 @@ extern int siG_InstanceID;
 #define ER_NO_SERVICE			91
 #define ER_CACHE_FALIURE		90
 #define ER_NO_RESOURCES_AVAILABLE  	89
+#define ER_CONSUMER_ALREADY_REGISTERED 	89
 
 
 /**

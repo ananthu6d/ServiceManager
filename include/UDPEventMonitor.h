@@ -37,7 +37,6 @@
 #include "AppUserTypes.h"
 #include "ServiceResource.h"
 #include "ServiceManagerInterface.pb.h"
-
 using namespace std;
 using namespace _6d;
 using namespace _6d::_Utils;
@@ -71,7 +70,7 @@ class CUDPEventMonitor : public IEventMonitor , public CRunnable
 		char 	pmesc_ClientIp[64];
 		long 	mesl_ClientPort;
 
-
+		map<int,IEventListener*> meC_ConsumerHandlerMap;
 
 	private:
 		/**
@@ -141,6 +140,7 @@ class CUDPEventMonitor : public IEventMonitor , public CRunnable
 		void 	mcfn_run();
 		void 	mcfn_close();
 		bool 	mcfn_sendTo(char*,int,char*,long);
+		bool 	mcfn_sendResponse(int,int,char*,const map<string,string>& CL_MetaDataMap = map<string,string>());
 
                 //Method to create Singleton Reference Object
                 static CUDPEventMonitor *mcfn_getInstance();

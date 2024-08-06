@@ -165,7 +165,7 @@ void CConsumerHandler::mcfn_onNotifyEvent(CGenericEvent& CL_GenericEvent,long sl
 					mefn_serilizeResponseAndSend(ER_PARSING_DATA,"Parsing Failed",pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);
 					__return__(false);
 				}
-				mcfn_processFetchResource(CL_FetchInstanceReq,pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);					
+				mefn_processFetchResource(CL_FetchInstanceReq,pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);					
 			}
 			break;
 		case CMD_RELEASE_RESOURCE_REQ:
@@ -177,14 +177,27 @@ void CConsumerHandler::mcfn_onNotifyEvent(CGenericEvent& CL_GenericEvent,long sl
 					mefn_serilizeResponseAndSend(ER_PARSING_DATA,"Parsing Failed",pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);
                                         __return__(false);
                                 }
-				mcfn_processReleaseResource(CL_ReleaseResourceReq,pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);
+				mefn_processReleaseResource(CL_ReleaseResourceReq,pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);
 			}
 			break;
+
+		case CMD_REGISTER_CONSUMER_REQ:
+			{
+				ResourceConsumerRegistrationReq CL_ResourceConsumerRegistrationReq;
+
+                                if(!CL_ResourceConsumerRegistrationReq.ParsePartialFromArray(pCL_ServiceManagerEventReq->pmcsc_ProtoBuffEvent,pCL_ServiceManagerEventReq->mcS_EventHeader.mcsi_ProtoBuffLength))
+                                {
+                                        mefn_serilizeResponseAndSend(ER_PARSING_DATA,"Parsing Failed",pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);
+                                        __return__(false);
+                                }
+                                mefn_processConsumerRegistration(CL_ResourceConsumerRegistrationReq,pCL_ServiceManagerEventReq->mcS_EventHeader.pmcsc_TransId,pSL_EventInfo->pmcsc_ClientIp,pSL_EventInfo->mcsl_ClientPort);
+
+			}
 	}	
 	__return__();
 }
 
-void    CConsumerHandler::mcfn_processFetchResource(const FetchInstanceReq& CL_FetchInstanceReq,char* pscL_Tid,char* pscL_ClientIp,long slL_ClientPort)
+void    CConsumerHandler::mefn_processFetchResource(const FetchInstanceReq& CL_FetchInstanceReq,char* pscL_Tid,char* pscL_ClientIp,long slL_ClientPort)
 {
 	__entryFunction__;
 	CServiceHandler* pCL_ServiceHandler=nullptr;
@@ -201,7 +214,7 @@ void    CConsumerHandler::mcfn_processFetchResource(const FetchInstanceReq& CL_F
 	pscL_SignalingIp[0]	= 0x00;
 	long slL_SignalingPort	= 0x00;
 	int siL_InstanceId	= 0x00;	
-	int siL_ErrorCode	= 0;	
+	int siL_ErrorCode	= 0x00;	
 
 	if(pCL_ServiceHandler->mcfn_fetchResource(pscL_SignalingIp,slL_SignalingPort,siL_InstanceId,siL_ErrorCode))
 	{
@@ -238,7 +251,7 @@ void    CConsumerHandler::mcfn_processFetchResource(const FetchInstanceReq& CL_F
 	__return__();
 
 }
-void    CConsumerHandler::mcfn_processReleaseResource(const ReleaseResourceReq& CL_ReleaseResourceReq,char* pscL_Tid,char* pscL_ClientIp,long slL_ClientPort)
+void    CConsumerHandler::mefn_processReleaseResource(const ReleaseResourceReq& CL_ReleaseResourceReq,char* pscL_Tid,char* pscL_ClientIp,long slL_ClientPort)
 {
 	__entryFunction__;
 	CServiceHandler* pCL_ServiceHandler=nullptr;
@@ -271,6 +284,14 @@ void    CConsumerHandler::mcfn_processReleaseResource(const ReleaseResourceReq& 
 	}
 	__return__();
 }
+void    CConsumerHandler::mefn_processConsumerRegistration(const ResourceConsumerRegistrationReq& CL_ResourceConsumerRegistrationReq,char* pscL_Tid,char* pscL_ClientIp,long slL_ClientPort)
+{
+	__entryFunction__;
+
+	mefn_serilizeResponseAndSend(CL_ResourceConsumerRegistrationReq.instanceid(),SUCCESS,"Consumer Registeration SuccessFull!",pscL_ClientIp,slL_ClientPort);
+	__return__();
+}
+
 
 bool CConsumerHandler::mefn_serilizeResponseAndSend(const int& siL_InstanceId,char* pscL_Tid,const int& siL_StatusCode,char* pscL_StatusDesc,char* pscL_SignalingIp, long slL_SignalingPort,char* pscL_ClientIp,long slL_ClientPort)
 {
@@ -331,6 +352,33 @@ bool CConsumerHandler::mefn_serilizeResponseAndSend(const int& siL_InstanceId,ch
 	EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "ReleaseResourceResp", "Success", this,pscL_Tid, "InstanceId:%d, StatusCode:%d, StatusDesc:%s",siL_InstanceId,siL_StatusCode,pscL_StatusDesc);
         __return__();
 }
+
+bool CConsumerHandler::mefn_serilizeResponseAndSend(const int& siL_InstanceId,int siL_StatusCode,char* pscL_StatusDesc,char* pscL_ClientIp,long slL_ClientPort)
+{
+        __entryFunction__;
+        ResourceConsumerRegistrationResp CL_ResourceConsumerRegistrationResp;
+
+        CL_ResourceConsumerRegistrationResp.set_instanceid(siL_InstanceId);
+        CL_ResourceConsumerRegistrationResp.set_statuscode(siL_StatusCode);
+        CL_ResourceConsumerRegistrationResp.set_statusdescription(pscL_StatusDesc);
+
+        SServiceManagerEvent SL_ServiceManagerEvent;
+
+        SL_ServiceManagerEvent.mcS_EventHeader.mcsi_ProtoBuffLength = CL_ResourceConsumerRegistrationResp.ByteSizeLong();
+        SL_ServiceManagerEvent.mcS_EventHeader.mcsi_CmdId           = CMD_REGISTER_CONSUMER_RESP;
+
+        if (!CL_ResourceConsumerRegistrationResp.SerializePartialToArray(SL_ServiceManagerEvent.pmcsc_ProtoBuffEvent,SL_ServiceManagerEvent.mcS_EventHeader.mcsi_ProtoBuffLength))
+        {
+                EVT_LOG(CG_EventLog, LOG_ERROR, siG_InstanceID, "serilizeResponseAndSend", "Failure", this,"", "Serializing Response Data");
+                __return__();
+        }
+
+        CUDPEventMonitor::mcfn_getInstance()->mcfn_sendTo((char*)&SL_ServiceManagerEvent,SL_ServiceManagerEvent.mcS_EventHeader.mcsi_ProtoBuffLength,pscL_ClientIp,slL_ClientPort);
+        EVT_LOG(CG_EventLog, LOG_INFO | LOG_OPINFO, siG_InstanceID, "ResourceConsumerRegistrationResp", "Success", this,"", "InstanceId:%d, StatusCode:%d, StatusDesc:%s",siL_InstanceId,siL_StatusCode,pscL_StatusDesc);
+        __return__();
+}
+
+
 
 bool CConsumerHandler::mefn_serilizeResponseAndSend(int siL_StatusCode,char* pscL_StatusDesc,char* pscL_Tid,char* pscL_ClientIp,long slL_ClientPort)
 {

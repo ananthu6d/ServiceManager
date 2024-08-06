@@ -53,6 +53,15 @@ class CConsumerHandler : public IEventListener
 		 * Private Member Functions
 		 */
 
+		void 	mefn_processFetchResource(const FetchInstanceReq&,char*,char*,long);
+		void	mefn_processReleaseResource(const ReleaseResourceReq&,char*,char*,long);
+		void	mefn_processConsumerRegistration(const ResourceConsumerRegistrationReq&,char*,char*,long);
+		//Serialize
+		bool 	mefn_serilizeResponseAndSend(const int&,char*,const int&,char*,char*,long,char*,long);
+		bool 	mefn_serilizeResponseAndSend(const int&,char*,int,char*,char*,long);
+		bool    mefn_serilizeResponseAndSend(const int&,int,char*,char*,long);
+		bool 	mefn_serilizeResponseAndSend(int,char*,char*,char*,long);
+	
 		//method to initialise the class object
 		void    mefn_initialize();
 
@@ -85,14 +94,7 @@ class CConsumerHandler : public IEventListener
 		long    mcfn_getSynchronizationKey(CGenericEvent &)	{ return mesl_SynKey;	  }
 		//Method to create Singleton Reference Object
 		void 	mcfn_setSynKey(const long& slL_SynKey) 		{ mesl_SynKey=slL_SynKey; }
-
-		void 	mcfn_processFetchResource(const FetchInstanceReq&,char*,char*,long);
-		void	mcfn_processReleaseResource(const ReleaseResourceReq&,char*,char*,long);
-
-		//Serialize
-		bool 	mefn_serilizeResponseAndSend(const int&,char*,const int&,char*,char*,long,char*,long);
-		bool 	mefn_serilizeResponseAndSend(const int&,char*,int,char*,char*,long);
-		bool 	mefn_serilizeResponseAndSend(int,char*,char*,char*,long);
+	
 		
 
 };
