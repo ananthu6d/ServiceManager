@@ -1,0 +1,74 @@
+<ServiceManager>
+
+	<Framework>
+	 	<AppTag>ServiceManager</AppTag>
+		<MaxProcessingThreads>10</MaxProcessingThreads>
+		<LogDirectory>../logs</LogDirectory>
+		<LogDuration>1800</LogDuration>
+		<DebugLevel>31</DebugLevel>
+		<EventObjPoolSize>2500</EventObjPoolSize>
+		<OAMPort>7176</OAMPort>
+		<Libraries>
+			<LibName>lib6dResourceCache.so.1.0.0</LibName>
+		</Libraries>
+		<LogFlushCount>600</LogFlushCount>
+                <InstanceID>11</InstanceID>
+                <ANUpperThreshold>10000</ANUpperThreshold>
+                <ANLowerThreshold>1000</ANLowerThreshold>
+                <LogMode>1</LogMode>
+                <LogStashAddress>10.0.10.118:5000</LogStashAddress>
+	</Framework>
+
+	<lib6dResourceCache>
+		<LogLevel>31</LogLevel>
+        </lib6dResourceCache>
+
+	<DataBase>
+		<DataBaseConnection PrimaryDBServerIP = "10.0.14.4" SecondaryDBServerIP = "10.0.14.4" DBServerPort = "3306" DBSID = "ServiceManagerDB_v1" DBUserName = "ivruser" DBPassword = "user@IVR" />
+		<DBConnMonitorInterval>220</DBConnMonitorInterval>
+		<DBConnectionpool>8</DBConnectionpool>
+		<DBInstanceMasterTable>INSTANCE_MASTER</DBInstanceMasterTable>
+		<DBServiceInstanceMappingTable>SERVICE_INSTANCE_MAPPING</DBServiceInstanceMappingTable>
+		<DBServiceMasterTable>SERVICE_MASTER</DBServiceMasterTable>
+	</DataBase>
+
+	<UDPServer IP = "10.0.10.33" PORT = "12345" />
+	<ConsumerHandlerCount>10</ConsumerHandlerCount>
+
+
+	<!--Peridic Enquiry for each seconds -->
+	<PeriodicEnquiryDetails>
+		<PrimaryEquiryTimerMs>60000</PrimaryEquiryTimerMs>
+		<MaxEnqiuryRequestTimeMs>5000</MaxEnqiuryRequestTimeMs>
+		<MaxEnquiryMissCount>4</MaxEnquiryMissCount>
+		<EnquiryRetry>
+			<Enquiry Retry="1" TimerMs="15000"/>
+			<Enquiry Retry="2" TimerMs="10000"/>
+			<Enquiry Retry="3" TimerMs="5000"/>
+			<Enquiry Retry="4" TimerMs="3000"/>
+		</EnquiryRetry>
+	</PeriodicEnquiryDetails>
+
+
+
+	<!--Peridic Enquiry where intervel will be calculated by Application
+
+	<PeriodicEnquiryDetails>
+		<PrimaryEquiryTimerMs>60000</PrimaryEquiryTimerMs>
+		<MaxEnqiuryRequestTimeMs>5000</MaxEnqiuryRequestTimeMs>
+		<MaxEnquiryMissCount>4</MaxEnquiryMissCount>
+	</PeriodicEnquiryDetails>
+	-->
+
+	<!--Peridic Enquiry where there is no intervel
+
+	<PeriodicEnquiryDetails>
+		<PrimaryEquiryTimerMs>60000</PrimaryEquiryTimerMs>
+		<MaxEnqiuryRequestTimeMs>5000</MaxEnqiuryRequestTimeMs>
+		<MaxEnquiryMissCount>0</MaxEnquiryMissCount>
+		<EnquiryRetry>
+		</EnquiryRetry>
+	</PeriodicEnquiryDetails>
+	-->
+
+</ServiceManager>
